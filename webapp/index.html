@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Dave.sports</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #0f0f0f;
+            --hint: #8a8a8a;
+            --link: #2481cc;
+            --primary: #2481cc;
+            --primary-text: #ffffff;
+            --card: #f3f4f6;
+            --border: #e6e6e6;
+            --success: #1f9d55;
+            --danger: #e55353;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .header {
+            padding: 16px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 12px;
+            color: var(--hint);
+        }
+
+        .view {
+            flex: 1;
+            padding: 16px;
+            padding-bottom: 84px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .club-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            font-size: 20px;
+        }
+
+        .club-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .user-details h2 {
+            font-size: 16px;
+        }
+
+        .muted {
+            color: var(--hint);
+            font-size: 12px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .stat {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--hint);
+            margin-top: 4px;
+        }
+
+        .section-title {
+            font-weight: 600;
+            margin: 16px 0 8px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            margin-bottom: 12px;
+        }
+
+        .tab {
+            border: 1px solid var(--border);
+            background: var(--card);
+            border-radius: 16px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: var(--primary-text);
+            border-color: var(--primary);
+        }
+
+        .chip {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            background: #fff;
+        }
+
+        .chip.active {
+            background: var(--primary);
+            color: var(--primary-text);
+            border-color: var(--primary);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .btn {
+            border: none;
+            background: var(--primary);
+            color: var(--primary-text);
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn.secondary {
+            background: #fff;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .list-item {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .list-item.active {
+            border: 1px solid var(--primary);
+            background: #fff;
+        }
+
+        .list-item .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge {
+            font-size: 12px;
+            color: var(--hint);
+        }
+
+        .status {
+            font-weight: 700;
+        }
+
+        .status.win { color: var(--success); }
+        .status.loss { color: var(--danger); }
+
+        .filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .input {
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            padding: 8px 6px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            font-size: 11px;
+            color: var(--hint);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .nav-btn.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .loading {
+            padding: 20px;
+            text-align: center;
+            color: var(--hint);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .toast.show { opacity: 0.85; }
+    </style>
+</head>
+<body>
+<div class="app">
+    <header class="header">
+        <h1>⚽ Dave.sports</h1>
+        <p>Web App Dashboard</p>
+    </header>
+    <main id="view" class="view"></main>
+    <nav class="bottom-nav">
+        <button class="nav-btn" data-route="/">🏠<span>Home</span></button>
+        <button class="nav-btn" data-route="/profile">🧍<span>Profile</span></button>
+        <button class="nav-btn" data-route="/predictions">⚽<span>Predictions</span></button>
+        <button class="nav-btn" data-route="/leaderboards">🏆<span>Leaders</span></button>
+    </nav>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+    const tg = window.Telegram ? window.Telegram.WebApp : null;
+    const initData = tg ? tg.initData : "";
+    const view = document.getElementById("view");
+    const toast = document.getElementById("toast");
+    const routes = ["/", "/profile", "/predictions", "/leaderboards", "/news"];
+    let authToken = null;
+    let authUser = null;
+    let authPromise = null;
+    const state = {
+        leaderboardsTab: "global",
+        leaderboards: { globalPage: 1, predictionsPage: 1 },
+        leaderboardsItems: { global: [], predictions: [] },
+        leaderboardsHasMore: { global: true, predictions: true }
+    };
+
+    if (tg) {
+        tg.ready();
+        tg.expand();
+        const theme = tg.themeParams || {};
+        document.documentElement.style.setProperty("--bg", theme.bg_color || "#ffffff");
+        document.documentElement.style.setProperty("--text", theme.text_color || "#0f0f0f");
+        document.documentElement.style.setProperty("--hint", theme.hint_color || "#8a8a8a");
+        document.documentElement.style.setProperty("--link", theme.link_color || "#2481cc");
+        document.documentElement.style.setProperty("--primary", theme.button_color || "#2481cc");
+        document.documentElement.style.setProperty("--primary-text", theme.button_text_color || "#ffffff");
+        document.documentElement.style.setProperty("--card", theme.secondary_bg_color || "#f3f4f6");
+    }
+
+    function showToast(message) {
+        if (tg && tg.showToast) {
+            tg.showToast(message);
+            return;
+        }
+        toast.textContent = message;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+    async function ensureAuth() {
+        if (!initData) throw new Error("missing_init_data");
+        if (authToken) return { token: authToken, user: authUser };
+        if (authPromise) return authPromise;
+        authPromise = fetch("/api/auth/telegram", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ initData })
+        })
+            .then(async res => {
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || "Auth failed");
+                }
+                return res.json();
+            })
+            .then(data => {
+                authToken = data.token;
+                authUser = data.user || null;
+                return data;
+            })
+            .finally(() => {
+                authPromise = null;
+            });
+        return authPromise;
+    }
+
+    async function apiFetch(path, options = {}) {
+        if (!authToken && path !== "/api/auth/telegram") {
+            await ensureAuth();
+        }
+        const headers = Object.assign({
+            "Content-Type": "application/json"
+        }, options.headers || {});
+        if (authToken) {
+            headers["Authorization"] = `Bearer ${authToken}`;
+        }
+        return fetch(path, Object.assign({}, options, { headers }))
+        return fetch(path, Object.assign({}, options, { headers }))
+            .then(async res => {
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || "Request failed");
+                }
+                return res.json();
+            });
+    }
+
+
+    function getRouteFromPath() {
+        const path = window.location.pathname.replace(/\/+$/, "") || "/";
+        for (const r of routes.slice(1)) {
+            if (path.endsWith(r)) return r;
+        }
+        return "/";
+    }
+
+    function getBasePath() {
+        const path = window.location.pathname.replace(/\/+$/, "") || "/";
+        for (const r of routes.slice(1)) {
+            if (path.endsWith(r)) {
+                return path.slice(0, -r.length) || "";
+            }
+        }
+        return path === "/" ? "" : path;
+    }
+
+    const basePath = getBasePath();
+
+    function buildPath(route) {
+        if (route === "/") {
+            return basePath || "/";
+        }
+        return (basePath + route) || route;
+    }
+
+    function navigate(route) {
+        window.history.pushState({}, "", buildPath(route));
+        render();
+    }
+
+    function setActiveNav(route) {
+        document.querySelectorAll(".nav-btn").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.route === route);
+        });
+    }
+
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.addEventListener("click", () => navigate(btn.dataset.route));
+    });
+    window.addEventListener("popstate", render);
+
+    function renderBlocked() {
+        view.innerHTML = `
+            <div class="card">
+                <div class="section-title">Open in Telegram</div>
+                <p class="muted">This Web App must be opened from the Telegram bot.</p>
+            </div>
+        `;
+    }
+
+    async function renderDashboard() {
+        view.innerHTML = `<div class="loading">Loading dashboard...</div>`;
+        const [me, stats] = await Promise.all([
+            apiFetch("/api/me"),
+            apiFetch("/api/predictions/stats")
+        ]);
+        const club = me.club;
+        const streak = stats.streak || { type: null, count: 0 };
+        const streakText = streak.count ? `${streak.type}${streak.count}` : "-";
+        const username = me.username || (authUser && authUser.username) || "User";
+        const total = stats.total || 0;
+        const winRate = stats.win_rate || 0;
+        const wins = stats.wins || 0;
+        view.innerHTML = `
+            <div class="card user-card">
+                <div class="club-badge">${club && club.badge ? `<img src="${club.badge}" alt="club">` : (club ? club.label.split(" ")[0] : "👤")}</div>
+                <div class="user-details">
+                    <h2>${username}</h2>
+                    <div class="muted">${club ? club.label : "No club selected"} · ${me.coins} coins</div>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat">
+                    <div class="stat-value">${total}</div>
+                    <div class="stat-label">Total Predictions</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${winRate}%</div>
+                    <div class="stat-label">Win %</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${streakText}</div>
+                    <div class="stat-label">Current Streak</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${wins}</div>
+                    <div class="stat-label">Wins</div>
+                </div>
+            </div>
+        `;
+    }
+
+    async function renderProfile() {
+        view.innerHTML = `<div class="loading">Loading profile...</div>`;
+        const data = await apiFetch("/api/me");
+        const clubs = data.clubs || [];
+        const selectedClub = data.club ? data.club.key : "";
+        const selectedInterests = data.interests || [];
+        const interestOptions = data.interests_options || [];
+        view.innerHTML = `
+            <div class="section-title">Club Selection</div>
+            <div class="grid" id="club-grid">
+                ${clubs.map(c => `
+                    <button class="chip ${c.key === selectedClub ? "active" : ""}" data-club="${c.key}">
+                        ${c.label}
+                    </button>
+                `).join("")}
+            </div>
+            <div class="section-title" style="margin-top:16px;" id="interests">Interests</div>
+            <div class="filters" id="interest-list">
+                ${interestOptions.map(i => `
+                    <button class="chip ${selectedInterests.includes(i) ? "active" : ""}" data-interest="${i}">
+                        ${i}
+                    </button>
+                `).join("")}
+            </div>
+            <div class="card">
+                <div class="section-title">Referrals</div>
+                <div class="muted">Invites: ${data.referrals.invite_count} · Coins earned: ${data.referrals.coins_earned}</div>
+            </div>
+        `;
+        document.getElementById("club-grid").onclick = async (e) => {
+            const btn = e.target.closest("[data-club]");
+            if (!btn) return;
+            const club = btn.dataset.club;
+            await apiFetch("/api/me", { method: "PATCH", body: JSON.stringify({ club }) });
+            showToast("Club updated");
+            renderProfile();
+        };
+        document.getElementById("interest-list").onclick = async (e) => {
+            const btn = e.target.closest("[data-interest]");
+            if (!btn) return;
+            const interest = btn.dataset.interest;
+            const next = selectedInterests.includes(interest)
+                ? selectedInterests.filter(i => i !== interest)
+                : selectedInterests.concat([interest]);
+            await apiFetch("/api/me", { method: "PATCH", body: JSON.stringify({ interests: next }) });
+            showToast("Interests updated");
+            renderProfile();
+        };
+        if (window.location.hash === "#interests") {
+            const anchor = document.getElementById("interests");
+            if (anchor) {
+                anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        }
+    }
+
+    function renderPredictionList(items, showCoins) {
+        if (!items.length) {
+            return `<div class="card muted">No predictions found.</div>`;
+        }
+        return `<div class="list">
+            ${items.map(p => `
+                <div class="list-item">
+                    <div class="row">
+                        <div><strong>${p.match}</strong></div>
+                        <div class="badge">${p.match_time || "TBD"}</div>
+                    </div>
+                    <div class="muted">Pick: ${p.prediction}</div>
+                    <div class="row" style="margin-top:6px;">
+                        <div class="badge">Result: ${p.result}</div>
+                        ${showCoins ? `<div class="badge">Coins: ${p.coins_earned}</div>` : ""}
+                    </div>
+                </div>
+            `).join("")}
+        </div>`;
+    }
+
+    async function renderPredictions() {
+        view.innerHTML = `<div class="loading">Loading predictions...</div>`;
+        const [stats, history] = await Promise.all([
+            apiFetch("/api/predictions/stats"),
+            apiFetch("/api/predictions/history")
+        ]);
+        const streak = stats.streak || { type: null, count: 0 };
+        const streakText = streak.count ? `${streak.type}${streak.count}` : "-";
+        const total = stats.total || 0;
+        const winRate = stats.win_rate || 0;
+        const wins = stats.wins || 0;
+        view.innerHTML = `
+            <div class="stats-grid">
+                <div class="stat">
+                    <div class="stat-value">${total}</div>
+                    <div class="stat-label">Total Predictions</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${winRate}%</div>
+                    <div class="stat-label">Win %</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${streakText}</div>
+                    <div class="stat-label">Current Streak</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${wins}</div>
+                    <div class="stat-label">Wins</div>
+                </div>
+            </div>
+            <div class="section-title">History</div>
+            ${renderPredictionList(history.items || [], true)}
+        `;
+    }
+
+    function renderLeaderboardList(items, currentRank) {
+        if (!items.length) return `<div class="card muted">No leaderboard data yet.</div>`;
+        return `<div class="list">
+            ${items.map(item => `
+                <div class="list-item ${item.rank === currentRank ? "active" : ""}">
+                    <div class="row">
+                        <div><strong>#${item.rank}</strong> ${item.username}</div>
+                        <div class="badge">${item.coins !== undefined ? `${item.coins} coins` : `${item.win_rate}%`}</div>
+                    </div>
+                    ${item.total ? `<div class="muted">${item.wins}/${item.total} correct</div>` : ""}
+                </div>
+            `).join("")}
+        </div>`;
+    }
+
+    async function renderLeaderboards() {
+        view.innerHTML = `<div class="loading">Loading leaderboards...</div>`;
+        const tab = state.leaderboardsTab;
+        const page = tab === "global" ? state.leaderboards.globalPage : state.leaderboards.predictionsPage;
+        const data = await apiFetch(`/api/leaderboards/${tab}?page=${page}&limit=10`);
+        if (page === 1) {
+            state.leaderboardsItems[tab] = data.items || [];
+        } else {
+            state.leaderboardsItems[tab] = state.leaderboardsItems[tab].concat(data.items || []);
+        }
+        state.leaderboardsHasMore[tab] = (data.items || []).length === 10;
+        const items = state.leaderboardsItems[tab];
+        view.innerHTML = `
+            <div class="tabs">
+                <button class="tab ${tab === "global" ? "active" : ""}" data-tab="global">Global</button>
+                <button class="tab ${tab === "predictions" ? "active" : ""}" data-tab="predictions">Predictions</button>
+            </div>
+            ${renderLeaderboardList(items || [], data.current_user_rank)}
+            ${state.leaderboardsHasMore[tab] ? `<div style="margin-top:10px;"><button class="btn secondary" id="lb-more">Load More</button></div>` : ""}
+        `;
+        document.querySelectorAll(".tab").forEach(btn => {
+            btn.onclick = () => {
+                state.leaderboardsTab = btn.dataset.tab;
+                state.leaderboards[btn.dataset.tab + "Page"] = 1;
+                renderLeaderboards();
+            };
+        });
+        const moreBtn = document.getElementById("lb-more");
+        if (moreBtn) {
+            moreBtn.onclick = () => {
+                if (tab === "global") state.leaderboards.globalPage += 1;
+                else state.leaderboards.predictionsPage += 1;
+                renderLeaderboards();
+            };
+        }
+    }
+
+    function renderNewsDisabled() {
+        view.innerHTML = `
+            <div class="card">
+                <div class="section-title">News is on Telegram</div>
+                <p class="muted">Articles are delivered only in Telegram topics. Use the bot topics to read the latest posts.</p>
+                <button class="btn secondary" id="news-home">Back to Home</button>
+            </div>
+        `;
+        const btn = document.getElementById("news-home");
+        if (btn) {
+            btn.onclick = () => navigate("/");
+        }
+    }
+
+    async function render() {
+        const route = getRouteFromPath();
+        setActiveNav(route);
+        if (!initData) {
+            renderBlocked();
+            return;
+        }
+        try {
+            await ensureAuth();
+            if (route === "/") await renderDashboard();
+            else if (route === "/profile") await renderProfile();
+            else if (route === "/predictions") await renderPredictions();
+            else if (route === "/leaderboards") await renderLeaderboards();
+            else if (route === "/news") {
+                renderNewsDisabled();
+            }
+            else await renderDashboard();
+        } catch (err) {
+            view.innerHTML = `<div class="card muted">Failed to load. Try again.</div>`;
+        }
+    }
+
+    render();
+</script>
+</body>
+</html>

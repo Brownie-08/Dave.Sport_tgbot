@@ -1,0 +1,33 @@
+# Node
+node_modules/
+webapp-next/node_modules/
+webapp-next/.next/
+webapp-next/out/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.qodo/
+
+# Environment
+.env
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Database (mounted as volume)
+*.db
+
+# Tests
+test_*.py

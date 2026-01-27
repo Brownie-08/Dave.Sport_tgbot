@@ -1,0 +1,33 @@
+services:
+  # Backend API & Telegram Bot
+  backend:
+    build: .
+    container_name: davesport_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./dave_sports.db:/app/dave_sports.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Next.js Web Mini-App
+  frontend:
+    build:
+      context: ./webapp-next
+      args:
+        - NEXT_PUBLIC_API_URL=${WEBAPP_URL}/api
+    container_name: davesport_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+
