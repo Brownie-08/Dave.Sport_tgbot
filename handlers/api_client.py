@@ -10,7 +10,7 @@ import aiohttp
 
 import config
 
-API_BASE_URL = (os.getenv("API_BASE_URL", "").strip() or config.API_BASE_URL or "http://localhost:8080").rstrip("/")
+API_BASE_URL = (os.getenv("API_BASE_URL", "").strip() or config.API_BASE_URL or "http://127.0.0.1:8000").rstrip("/")
 JWT_SECRET = os.getenv("JWT_SECRET") or (config.BOT_TOKEN or "change_me")
 BOT_SERVICE_TOKEN = os.getenv("BOT_SERVICE_TOKEN") or config.BOT_SERVICE_TOKEN or ""
 

@@ -4,6 +4,9 @@ webapp-next/node_modules/
 webapp-next/.next/
 webapp-next/out/
 
+# Frontend directory (exclude from backend context entirely)
+webapp-next/
+
 # Python
 __pycache__/
 *.py[cod]
