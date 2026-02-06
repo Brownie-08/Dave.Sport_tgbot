@@ -199,7 +199,7 @@ def get_predictions_history(user_id: int) -> List[Dict[str, Any]]:
                m.team_a, m.team_b, m.score_a, m.score_b, m.result, m.match_time, m.sport_type
         FROM predictions p
         JOIN matches m ON p.match_id = m.match_id
-        WHERE p.user_id = ? AND m.status = 'RESOLVED'
+        WHERE p.user_id = ?
         ORDER BY m.match_time DESC, m.match_id DESC
     ''', (user_id,))
     rows = cursor.fetchall()

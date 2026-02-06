@@ -248,6 +248,47 @@ async def init_db():
         except:
             pass
         
+        # Dave.sport feed tables
+        await cursor.execute('''
+        CREATE TABLE IF NOT EXISTS davesport_subscribers (
+            chat_id INTEGER PRIMARY KEY,
+            twitter_enabled INTEGER DEFAULT 0,
+            website_enabled INTEGER DEFAULT 1,
+            sport_filter TEXT DEFAULT 'all',
+            subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
+        
+        await cursor.execute('''
+        CREATE TABLE IF NOT EXISTS chat_category_routing (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            chat_id INTEGER NOT NULL,
+            category TEXT NOT NULL,
+            thread_id INTEGER,
+            enabled INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(chat_id, category)
+        )
+        ''')
+        
+        await cursor.execute('''
+        CREATE TABLE IF NOT EXISTS davesport_posts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id TEXT NOT NULL,
+            chat_id INTEGER NOT NULL,
+            source TEXT NOT NULL,
+            message_id INTEGER DEFAULT 0,
+            posted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(post_id, chat_id)
+        )
+        ''')
+        
+        # Create indexes for Dave.sport tables
+        await cursor.execute('CREATE INDEX IF NOT EXISTS idx_davesport_subscribers_chat ON davesport_subscribers(chat_id)')
+        await cursor.execute('CREATE INDEX IF NOT EXISTS idx_chat_category_routing_chat ON chat_category_routing(chat_id)')
+        await cursor.execute('CREATE INDEX IF NOT EXISTS idx_chat_category_routing_category ON chat_category_routing(category)')
+        await cursor.execute('CREATE INDEX IF NOT EXISTS idx_davesport_posts_post ON davesport_posts(post_id, chat_id)')
+        
         await conn.commit()
         logging.info("Async database initialized with indexes")
 

@@ -711,10 +711,16 @@ async def get_chat_categories(chat_id: int) -> List[Dict]:
 
 def detect_article_categories(article: Dict) -> List[str]:
     """
-    Detect categories strictly from WordPress categories.
-    Returns a list of routing categories (e.g., ['football_news'])
+    Detect routing categories from WordPress.
+
+    Primary: WordPress category IDs (most reliable)
+    Fallback: WordPress category names (handles sites where IDs change)
+
+    Returns a list of routing categories (e.g., ['football_news']).
     """
-    categories_found = []
+    categories_found: List[str] = []
+
+    # 1) Try category IDs
     category_ids = article.get("category_ids", []) or []
     for raw_id in category_ids:
         try:
@@ -724,8 +730,20 @@ def detect_article_categories(article: Dict) -> List[str]:
         route = WP_CATEGORY_ID_TO_ROUTE.get(cat_id)
         if route and route not in categories_found:
             categories_found.append(route)
+
+    # 2) Fallback to category names
+    if not categories_found:
+        for name in (article.get("categories") or []):
+            if not name:
+                continue
+            key = str(name).strip().lower()
+            route = WP_CATEGORY_TO_ROUTE.get(key)
+            if route and route not in categories_found:
+                categories_found.append(route)
+
     if not categories_found:
         return []
+
     # First match wins by priority
     for preferred in CATEGORY_PRIORITY:
         if preferred in categories_found:
@@ -1026,7 +1044,13 @@ async def feed_status_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 # ========== CONTENT POSTING ==========
 
-async def post_content_to_chat(context: ContextTypes.DEFAULT_TYPE, chat_id: int, content: Dict, thread_id: Optional[int] = None) -> bool:
+async def post_content_to_chat(
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int,
+    content: Dict,
+    thread_id: Optional[int] = None,
+    allow_general: bool = False,
+) -> bool:
     """Post content (tweet or article) to a chat"""
     try:
         source = content.get("source", "unknown")
@@ -1036,8 +1060,9 @@ async def post_content_to_chat(context: ContextTypes.DEFAULT_TYPE, chat_id: int,
             logging.info(f"Skipping twitter post to chat {chat_id} (Twitter disabled).")
             return False
         
-        # Block feeds in General (no thread_id)
-        if thread_id is None and source in ["website", "twitter"]:
+        # By default we don't post feeds to the group's main chat (noise). However, if a chat is
+        # subscribed but hasn't configured topics yet, allow_general enables a fallback delivery.
+        if thread_id is None and source in ["website", "twitter"] and not allow_general:
             logging.info(f"Skipping {source} post to general chat {chat_id} (feeds blocked).")
             return False
         
@@ -1146,18 +1171,42 @@ async def check_davesport_feeds(context: ContextTypes.DEFAULT_TYPE):
                             await mark_post_sent(post_id, chat_id, "website")
                         await asyncio.sleep(1)  # Rate limit
     
-    # === LEGACY SPORT FILTER ROUTING ===
-    # For subscribers who haven't set up category routing
+    # === LEGACY SPORT FILTER ROUTING (FALLBACK) ===
+    # If a chat subscribed but did NOT configure category routing (topics), deliver into the main chat.
     subscribers = await get_subscribed_chats()
     if not subscribers:
-        logging.info("Dave.sport feed check complete (no legacy subscribers)")
+        logging.info("Dave.sport feed check complete (no subscribers)")
         return
-    
+
     for sub in subscribers:
-        chat_id = sub["chat_id"]
-        
-        # Website articles are routed ONLY via category-to-topic mapping (no legacy routing)
-    
+        try:
+            chat_id = int(sub.get("chat_id"))
+        except Exception:
+            continue
+        sport_filter = (sub.get("sport_filter") or "all").lower()
+
+        # If this chat has at least one category routing entry, skip fallback to avoid duplicates.
+        try:
+            configured = await get_chat_categories(chat_id)
+        except Exception:
+            configured = []
+        if configured:
+            continue
+
+        for article in reversed(website_articles or []):
+            if not article_matches_sport(article, sport_filter):
+                continue
+
+            post_id_base = f"website_{article['id']}"
+            post_id = f"{post_id_base}_t0"
+            if await is_post_sent(post_id, chat_id):
+                continue
+
+            success = await post_content_to_chat(context, chat_id, article, thread_id=None, allow_general=True)
+            if success:
+                await mark_post_sent(post_id, chat_id, "website")
+            await asyncio.sleep(1)
+
     logging.info("Dave.sport feed check complete")
 
 def setup_davesport_job(application):

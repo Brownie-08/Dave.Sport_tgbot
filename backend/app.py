@@ -1,4 +1,7 @@
 import os
+import json
+import urllib.request
+import urllib.error
 from pathlib import Path
 from typing import Optional, List
 
@@ -14,7 +17,19 @@ from backend import service
 from shared_constants import CLUBS_DATA, INTERESTS
 
 
+from starlette.requests import Request
+from starlette.responses import Response
+
 app = FastAPI()
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    if "/api/auth/telegram" in request.url.path:
+        print(f"DEBUG: Received request to {request.url.path} from {request.client.host}", flush=True)
+    response = await call_next(request)
+    if "/api/auth/telegram" in request.url.path:
+        print(f"DEBUG: Response status for {request.url.path}: {response.status_code}", flush=True)
+    return response
 
 app.add_middleware(
     CORSMiddleware,
@@ -108,6 +123,107 @@ class GroupPayload(BaseModel):
     chat_type: Optional[str] = ""
 
 
+class BroadcastPayload(BaseModel):
+    message: str
+
+
+def _format_list(items: List[str]) -> str:
+    clean = [i for i in items if i]
+    if not clean:
+        return ""
+    if len(clean) == 1:
+        return clean[0]
+    if len(clean) == 2:
+        return f"{clean[0]} & {clean[1]}"
+    return ", ".join(clean[:-1]) + f", & {clean[-1]}"
+
+
+def _parse_interests(value) -> List[str]:
+    if not value:
+        return []
+    if isinstance(value, list):
+        return [i for i in value if i]
+    if isinstance(value, str):
+        return [i.strip() for i in value.split(",") if i.strip()]
+    return []
+
+
+def _get_general_targets() -> List[dict]:
+    if config.GENERAL_BROADCAST_CHAT_ID:
+        return [{"chat_id": int(config.GENERAL_BROADCAST_CHAT_ID), "thread_id": None}]
+
+    try:
+        general = service.get_chats_for_category("general")
+    except Exception:
+        general = []
+
+    targets = []
+    if general:
+        row = general[0]
+        chat_id = row.get("chat_id")
+        if chat_id is not None:
+            try:
+                chat_id = int(chat_id)
+            except Exception:
+                chat_id = None
+            if chat_id and chat_id < 0:
+                targets.append({"chat_id": chat_id, "thread_id": row.get("thread_id")})
+    return targets
+
+
+def _send_telegram_message(chat_id: int, text: str, thread_id: Optional[int] = None) -> bool:
+    if not config.BOT_TOKEN:
+        return False
+    payload = {"chat_id": chat_id, "text": text}
+    if thread_id:
+        payload["message_thread_id"] = thread_id
+    url = f"https://api.telegram.org/bot{config.BOT_TOKEN}/sendMessage"
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return 200 <= getattr(resp, "status", 200) < 300
+    except Exception:
+        return False
+
+
+def _broadcast_general(text: str, targets: Optional[List[dict]] = None) -> int:
+    sent = 0
+    target_list = targets if targets is not None else _get_general_targets()
+    for target in target_list:
+        if _send_telegram_message(target["chat_id"], text, target.get("thread_id")):
+            sent += 1
+    return sent
+
+
+def _broadcast_profile_changes(
+    user_id: int,
+    username: Optional[str],
+    before_club: Optional[str],
+    before_interests,
+    after_club: Optional[str],
+    after_interests,
+) -> None:
+    display_name = f"@{username}" if username else f"User {user_id}"
+    before_interest_set = set(_parse_interests(before_interests))
+    after_interest_set = set(_parse_interests(after_interests))
+    messages = []
+
+    if after_club and after_club != before_club:
+        messages.append(f"{display_name} now supports {after_club}.")
+
+    if after_interest_set != before_interest_set:
+        added = sorted(after_interest_set - before_interest_set)
+        if added:
+            interest_text = _format_list(added)
+            messages.append(f"{display_name} just selected {interest_text} as an interest.")
+        else:
+            messages.append(f"{display_name} updated their interests.")
+
+    for message in messages:
+        _broadcast_general(message)
+
+
 class DavesportSubscribePayload(BaseModel):
     chat_id: int
     twitter: Optional[bool] = True
@@ -183,12 +299,37 @@ def health():
     return {"ok": True}
 
 
+@app.get("/api/debug")
+def debug_endpoint():
+    """Simple endpoint to test if API is reachable."""
+    import logging
+    logging.info("DEBUG endpoint hit!")
+    print("DEBUG: /api/debug endpoint was called!", flush=True)
+    return {"ok": True, "message": "API is reachable", "timestamp": str(__import__('datetime').datetime.now())}
+
+
+@app.post("/api/debug/auth")
+def debug_auth_test(payload: dict):
+    """Test endpoint to see what data is received."""
+    print(f"DEBUG: /api/debug/auth received payload: {payload}", flush=True)
+    return {"received": payload, "ok": True}
+
+
 def _telegram_auth(payload: TelegramAuthPayload):
     if not config.BOT_TOKEN:
         raise HTTPException(status_code=500, detail="bot_token_missing")
+    
+    # Debug logging
+    print(f"DEBUG: Auth attempt - initData length: {len(payload.initData) if payload.initData else 0}", flush=True)
+    import logging
+    logging.info(f"Auth attempt - initData length: {len(payload.initData) if payload.initData else 0}")
+    
     try:
         parsed = auth_utils.verify_init_data(payload.initData, config.BOT_TOKEN)
     except ValueError as exc:
+        print(f"DEBUG: Auth failed: {exc}", flush=True)
+        logging.error(f"Auth failed: {exc}")
+        logging.error(f"initData preview: {payload.initData[:100] if payload.initData else 'empty'}...")
         raise HTTPException(status_code=403, detail=str(exc))
     tg_user = parsed.get("user") or {}
     user_id = int(tg_user.get("id"))
@@ -263,6 +404,7 @@ def api_me(user_id: int = Depends(get_current_user)):
 def api_me_update(payload: dict, user_id: int = Depends(get_current_user)):
     club = payload.get("club")
     interests = payload.get("interests")
+    before_user = service.get_user(user_id) or {}
     try:
         data = service.update_me(user_id, club, interests)
     except ValueError as exc:
@@ -272,6 +414,18 @@ def api_me_update(payload: dict, user_id: int = Depends(get_current_user)):
         for key, info in CLUBS_DATA.items()
     ]
     data["interests_options"] = INTERESTS
+    try:
+        after_club = data.get("club", {}).get("label") if data.get("club") else None
+        _broadcast_profile_changes(
+            user_id=user_id,
+            username=data.get("username"),
+            before_club=before_user.get("club"),
+            before_interests=before_user.get("interests"),
+            after_club=after_club,
+            after_interests=data.get("interests"),
+        )
+    except Exception:
+        pass
     return data
 
 
@@ -403,9 +557,21 @@ def admin_get_user(user_id: int, _: None = Depends(require_bot)):
 
 @app.post("/admin/users/{user_id}/profile")
 def admin_update_profile(user_id: int, payload: AdminProfilePayload, _: None = Depends(require_bot)):
+    before_user = service.get_user(user_id) or {}
     user = service.update_user_profile_raw(user_id, payload.club, payload.interests)
     if not user:
         raise HTTPException(status_code=404, detail="user_not_found")
+    try:
+        _broadcast_profile_changes(
+            user_id=user_id,
+            username=user.get("username"),
+            before_club=before_user.get("club"),
+            before_interests=before_user.get("interests"),
+            after_club=user.get("club"),
+            after_interests=user.get("interests"),
+        )
+    except Exception:
+        pass
     return user
 
 
@@ -426,6 +592,20 @@ def admin_reset_warnings(user_id: int, _: None = Depends(require_bot)):
     return {"ok": True}
 
 
+@app.post("/admin/broadcast")
+def admin_broadcast(payload: BroadcastPayload, _: None = Depends(require_bot)):
+    message = (payload.message or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="message_required")
+    targets = _get_general_targets()
+    if not targets:
+        raise HTTPException(status_code=400, detail="broadcast_target_missing")
+    sent = _broadcast_general(message, targets)
+    if sent == 0:
+        raise HTTPException(status_code=502, detail="broadcast_send_failed")
+    return {"ok": True, "sent": sent}
+
+
 @app.get("/admin/users/by-username")
 def admin_get_user_by_username(username: str, _: None = Depends(require_bot)):
     user = service.get_user_by_username(username)
@@ -437,6 +617,15 @@ def admin_get_user_by_username(username: str, _: None = Depends(require_bot)):
 @app.post("/admin/matches")
 def admin_create_match(payload: MatchCreatePayload, _: None = Depends(require_bot)):
     match_id = service.create_match(payload.team_a, payload.team_b, payload.match_time, payload.sport_type or "football", payload.chat_id)
+    try:
+        match_time = payload.match_time or "TBD"
+        sport_type = payload.sport_type or "football"
+        message = f"New match announced: {payload.team_a} vs {payload.team_b} ({sport_type}). Kickoff: {match_time}. Open Dave.Sport to predict."
+        if config.WEBAPP_URL:
+            message = f"{message}\n{config.WEBAPP_URL}"
+        _broadcast_general(message)
+    except Exception:
+        pass
     return {"match_id": match_id}
 
 
@@ -451,6 +640,14 @@ def admin_get_match(match_id: int, _: None = Depends(require_bot)):
     if not match:
         raise HTTPException(status_code=404, detail="match_not_found")
     return match
+
+
+@app.get("/admin/matches/{match_id}/predictions")
+def admin_match_predictions(match_id: int, _: None = Depends(require_bot)):
+    match = service.get_match(match_id)
+    if not match:
+        raise HTTPException(status_code=404, detail="match_not_found")
+    return {"items": service.get_match_predictions(match_id)}
 
 
 @app.post("/admin/matches/{match_id}/close")

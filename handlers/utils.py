@@ -4,9 +4,16 @@ Utility functions for Dave.sports bot
 import asyncio
 import time
 from functools import wraps
+from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ContextTypes
+
 import config
+
+# Cache-busting for Telegram WebApp (Telegram can cache aggressively).
+# Using a date-based version keeps the URL stable for a day while still allowing quick refreshes.
+WEBAPP_VERSION = getattr(config, "WEBAPP_VERSION", "") or time.strftime("%Y%m%d")
 
 # Auto-delete delay for ephemeral messages (in seconds)
 EPHEMERAL_DELAY = 60
@@ -15,16 +22,29 @@ ADMIN_EPHEMERAL_DELAY = 300
 # Recent command tracking (for auto-cleaning replies)
 COMMAND_TTL = 10  # seconds to consider a command "recent"
 RECENT_COMMANDS = {}
+def _append_webapp_version(url: str) -> str:
+    if not url or not WEBAPP_VERSION:
+        return url
+    parts = urlsplit(url)
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+    query.setdefault("v", WEBAPP_VERSION)
+    new_query = urlencode(query)
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, new_query, parts.fragment))
+
+
 def build_webapp_url(path: str = "") -> str:
     base = getattr(config, "WEBAPP_URL", "") or ""
     base = base.strip()
     if not base:
         return ""
+
     if not path:
-        return base
+        return _append_webapp_version(base)
+
     if not path.startswith("/"):
         path = "/" + path
-    return base.rstrip("/") + path
+
+    return _append_webapp_version(base.rstrip("/") + path)
 
 def build_webapp_url_with_query(path: str = "", query: str = "", fragment: str = "") -> str:
     url = build_webapp_url(path)

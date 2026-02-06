@@ -40,7 +40,20 @@ def get_user(user_id: int) -> Optional[Dict[str, Any]]:
 def get_active_matches() -> List[Dict[str, Any]]:
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT * FROM matches WHERE status IN ('OPEN','CLOSED') ORDER BY match_id DESC")
+            cur.execute(
+                """
+                SELECT m.*,
+                       COALESCE(p.prediction_count, 0) AS prediction_count
+                FROM matches m
+                LEFT JOIN (
+                    SELECT match_id, COUNT(*) AS prediction_count
+                    FROM predictions
+                    GROUP BY match_id
+                ) p ON p.match_id = m.match_id
+                WHERE m.status IN ('OPEN','CLOSED')
+                ORDER BY m.match_id DESC
+                """
+            )
             return cur.fetchall() or []
 
 
@@ -60,6 +73,10 @@ def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
 
 
 def get_user_role(user_id: int) -> str:
+    # Owner override from .env
+    if user_id and user_id == getattr(config, "OWNER_ID", 0):
+        return "OWNER"
+
     user = get_user(user_id)
     if not user:
         return "MEMBER"
@@ -95,7 +112,8 @@ def get_balance(user_id: int) -> int:
 def build_me_response(user_id: int) -> Dict[str, Any]:
     user = get_user(user_id)
     if not user:
-        return {"id": user_id, "username": None, "role": "MEMBER", "club": None, "interests": [], "coins": 0}
+        role = "owner" if user_id and user_id == getattr(config, "OWNER_ID", 0) else "member"
+        return {"id": user_id, "username": None, "role": role, "club": None, "interests": [], "coins": 0}
 
     club_value = user.get("club")
     club_entry = None
@@ -117,10 +135,14 @@ def build_me_response(user_id: int) -> Dict[str, Any]:
             row = cur.fetchone()
             invite_count = int(row.get("cnt") or 0) if row else 0
 
+    role = (user.get("role") or "MEMBER").lower()
+    if user_id and user_id == getattr(config, "OWNER_ID", 0):
+        role = "owner"
+
     return {
         "id": user_id,
         "username": user.get("username"),
-        "role": (user.get("role") or "MEMBER").lower(),
+        "role": role,
         "club": club_entry,
         "interests": interests,
         "coins": int(user.get("coin_balance") or 0),
@@ -153,39 +175,53 @@ def update_me(user_id: int, club_key: Optional[str], interests: Optional[List[st
 def claim_daily(user_id: int, reward_amount: int = 2) -> Dict[str, Any]:
     with get_conn() as conn:
         with conn.cursor() as cur:
+            # Use a single atomic UPDATE with WHERE clause to prevent race conditions
+            # This checks and updates in one operation, preventing concurrent claims
+            now = datetime.utcnow()
+            today_start = datetime(now.year, now.month, now.day)  # Start of current day
+            
+            # Try to claim: update only if last_daily_claim is NULL or older than today
+            cur.execute(
+                """UPDATE users 
+                   SET coin_balance = coin_balance + %s, 
+                       last_daily_claim = CURRENT_TIMESTAMP 
+                   WHERE user_id = %s 
+                   AND (last_daily_claim IS NULL 
+                        OR DATE(last_daily_claim) < DATE('now'))""",
+                (reward_amount, user_id),
+            )
+            updated = cur.rowcount > 0
+            conn.commit()
+            
+            # Get current balance and last claim time
             cur.execute("SELECT coin_balance, last_daily_claim FROM users WHERE user_id = %s", (user_id,))
             row = cur.fetchone()
             if not row:
                 return {"claimed": False, "error": "user_not_found"}
+            
             balance = int(row.get("coin_balance") or 0)
             last_claim = row.get("last_daily_claim")
-            now = datetime.utcnow()
-            can_claim = False
-            if not last_claim:
-                can_claim = True
-            else:
-                if isinstance(last_claim, datetime):
-                    if now - last_claim > timedelta(days=1):
-                        can_claim = True
-                else:
-                    can_claim = True
-
-            if can_claim:
-                cur.execute(
-                    "UPDATE users SET coin_balance = coin_balance + %s, last_daily_claim = CURRENT_TIMESTAMP WHERE user_id = %s",
-                    (reward_amount, user_id),
-                )
-                conn.commit()
-                return {"claimed": True, "coins_added": reward_amount, "balance": balance + reward_amount}
-
-            # already claimed
+            
+            if updated:
+                return {"claimed": True, "coins_added": reward_amount, "balance": balance}
+            
+            # Already claimed today - calculate retry time
             retry_in = {}
-            if isinstance(last_claim, datetime):
-                next_claim = last_claim + timedelta(days=1)
-                remaining = next_claim - now
-                hours, remainder = divmod(int(remaining.total_seconds()), 3600)
-                minutes, _ = divmod(remainder, 60)
-                retry_in = {"hours": hours, "minutes": minutes}
+            if last_claim:
+                if isinstance(last_claim, str):
+                    try:
+                        last_claim = datetime.fromisoformat(last_claim.replace('Z', '+00:00'))
+                    except:
+                        last_claim = None
+                
+                if isinstance(last_claim, datetime):
+                    # Calculate time until next day (midnight UTC)
+                    next_claim = datetime(now.year, now.month, now.day) + timedelta(days=1)
+                    remaining = next_claim - now
+                    hours, remainder = divmod(int(remaining.total_seconds()), 3600)
+                    minutes, _ = divmod(remainder, 60)
+                    retry_in = {"hours": hours, "minutes": minutes}
+            
             return {"claimed": False, "retry_in": retry_in, "balance": balance}
 
 
@@ -298,7 +334,7 @@ def get_predictions_history(user_id: int) -> List[Dict[str, Any]]:
                        m.team_a, m.team_b, m.score_a, m.score_b, m.result, m.match_time, m.sport_type
                 FROM predictions p
                 JOIN matches m ON p.match_id = m.match_id
-                WHERE p.user_id = %s AND m.status = 'RESOLVED'
+                WHERE p.user_id = %s
                 ORDER BY m.match_time DESC NULLS LAST, m.match_id DESC
                 """,
                 (user_id,),
@@ -357,7 +393,7 @@ def get_predictions_stats(user_id: int) -> Dict[str, Any]:
                 """
                 SELECT status FROM predictions
                 WHERE user_id = %s AND status IN ('WON','LOST')
-                ORDER BY id DESC LIMIT 20
+                ORDER BY ROWID DESC LIMIT 20
                 """,
                 (user_id,),
             )
@@ -710,7 +746,7 @@ def unsubscribe_chat(chat_id: int):
 def get_subscribed_chats() -> List[Dict[str, Any]]:
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT chat_id, twitter_enabled, website_enabled, sport_filter FROM davesport_subscribers")
+            cur.execute("SELECT chat_id, twitter_enabled, website_enabled, sport_filter FROM davesport_subscribers WHERE chat_id < 0")
             rows = cur.fetchall() or []
     return [{"chat_id": r["chat_id"], "twitter": r["twitter_enabled"], "website": r["website_enabled"], "sport": r.get("sport_filter") or "all"} for r in rows]
 
@@ -737,11 +773,45 @@ def get_chats_for_category(category: str) -> List[Dict[str, Any]]:
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT chat_id, thread_id FROM chat_category_routing WHERE category = %s AND enabled = 1 AND thread_id IS NOT NULL",
+                "SELECT chat_id, thread_id FROM chat_category_routing WHERE category = %s AND enabled = 1 AND chat_id < 0",
                 (category.lower(),),
             )
             rows = cur.fetchall() or []
     return [{"chat_id": r["chat_id"], "thread_id": r["thread_id"]} for r in rows]
+
+
+def get_match_predictions(match_id: int) -> List[Dict[str, Any]]:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT p.user_id,
+                       u.username,
+                       p.prediction,
+                       p.pred_score_a,
+                       p.pred_score_b,
+                       p.status
+                FROM predictions p
+                LEFT JOIN users u ON p.user_id = u.user_id
+                WHERE p.match_id = %s
+                ORDER BY p.user_id ASC
+                """,
+                (match_id,),
+            )
+            rows = cur.fetchall() or []
+    items: List[Dict[str, Any]] = []
+    for r in rows:
+        items.append(
+            {
+                "user_id": int(r.get("user_id")),
+                "username": r.get("username"),
+                "prediction": r.get("prediction"),
+                "pred_score_a": r.get("pred_score_a"),
+                "pred_score_b": r.get("pred_score_b"),
+                "status": r.get("status"),
+            }
+        )
+    return items
 
 
 def get_chat_categories(chat_id: int) -> List[Dict[str, Any]]:

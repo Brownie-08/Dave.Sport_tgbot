@@ -228,18 +228,61 @@ async def create_and_post_match(update, context, team_a, team_b, match_time=None
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-
-    # Send Match Card
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=f"⚽ <b>New Match Prediction!</b>\n\n"
-             f"🆔 Match #{match_id}\n"
-             f"🏟️ <b>{team_a}</b> vs <b>{team_b}</b>{time_display}\n\n"
-             f"🎯 Correct prediction: <b>+{config.PREDICTION_REWARD} coins</b>\n\n"
-             f"👇 <b>Make your prediction:</b>",
-        reply_markup=reply_markup,
-        parse_mode="HTML"
-    )
+    
+    match_text = (f"⚽ <b>New Match Prediction!</b>\n\n"
+                  f"🆔 Match #{match_id}\n"
+                  f"🏟️ <b>{team_a}</b> vs <b>{team_b}</b>{time_display}\n\n"
+                  f"🎯 Correct prediction: <b>+{config.PREDICTION_REWARD} coins</b>\n\n"
+                  f"👇 <b>Make your prediction:</b>")
+    
+    # Determine target chat(s) for broadcasting
+    target_chats = []
+    
+    # Check if there's a stored target chat ID from the wizard
+    if "match_target_chat_id" in context.user_data:
+        target_chats.append(context.user_data["match_target_chat_id"])
+        # Clean up after use
+        del context.user_data["match_target_chat_id"]
+    elif update.effective_chat.type in ["group", "supergroup"]:
+        # Match created directly in a group
+        target_chats.append(update.effective_chat.id)
+    else:
+        # Created from private chat, broadcast to all groups
+        try:
+            groups_data = await api_bot_get("/admin/groups")
+            all_groups = groups_data.get("chat_ids", [])
+            target_chats.extend(all_groups)
+        except Exception as e:
+            logging.error(f"Failed to get groups for broadcasting: {e}")
+            # Fallback: send to current chat only
+            target_chats.append(update.effective_chat.id)
+    
+    # Broadcast match card to all target chats
+    broadcast_success = False
+    for chat_id in target_chats:
+        try:
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=match_text,
+                reply_markup=reply_markup,
+                parse_mode="HTML"
+            )
+            broadcast_success = True
+            logging.info(f"Match #{match_id} broadcast to chat {chat_id}")
+        except Exception as e:
+            logging.error(f"Failed to broadcast match #{match_id} to chat {chat_id}: {e}")
+    
+    # If broadcast failed to all groups, try sending to current chat as fallback
+    if not broadcast_success:
+        try:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=match_text,
+                reply_markup=reply_markup,
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            logging.error(f"Failed to send match #{match_id} even to current chat: {e}")
     
     # Admin Control Panel
     admin_keyboard = [

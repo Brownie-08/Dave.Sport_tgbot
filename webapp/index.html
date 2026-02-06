@@ -1,697 +1,1412 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Dave.sports</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root {
-            --bg: #ffffff;
-            --text: #0f0f0f;
-            --hint: #8a8a8a;
-            --link: #2481cc;
-            --primary: #2481cc;
-            --primary-text: #ffffff;
-            --card: #f3f4f6;
-            --border: #e6e6e6;
-            --success: #1f9d55;
-            --danger: #e55353;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dave.Sport</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --brand-yellow: #FEF200;
+      --brand-black: #000000;
+      --brand-white: #FFFFFF;
+      --brand-muted: #6B6B6B;
+      --brand-border: #0C0C0C;
+      --brand-bg: #FEF200;
+      --brand-card: #FFFFFF;
+      --brand-shadow: 0 18px 40px rgba(0, 0, 0, 0.15);
+      --brand-radius: 18px;
+      --brand-radius-sm: 12px;
+      --brand-radius-lg: 26px;
+      --brand-font: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    * {
+      box-sizing: border-box;
+    }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-        }
+    body {
+      margin: 0;
+      font-family: var(--brand-font);
+      background: var(--brand-bg);
+      color: var(--brand-black);
+      min-height: 100vh;
+    }
 
-        .app {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
+    #app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-        .header {
-            padding: 16px;
-            text-align: center;
-            border-bottom: 1px solid var(--border);
-        }
+    .splash {
+      position: fixed;
+      inset: 0;
+      background: var(--brand-yellow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 18px;
+      z-index: 50;
+      transition: opacity 0.3s ease;
+    }
 
-        .header h1 {
-            font-size: 20px;
-            font-weight: 700;
-        }
+    .splash.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
 
-        .header p {
-            font-size: 12px;
-            color: var(--hint);
-        }
+    .splash-logo {
+      width: min(72vw, 320px);
+      height: auto;
+      filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.2));
+    }
 
-        .view {
-            flex: 1;
-            padding: 16px;
-            padding-bottom: 84px;
-        }
+    .splash-subtitle {
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 12px;
+    }
 
-        .card {
-            background: var(--card);
-            border-radius: 14px;
-            padding: 14px;
-            margin-bottom: 12px;
-        }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 18px 18px 14px;
+      background: var(--brand-yellow);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
 
-        .user-card {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+    .brand-logo {
+      width: 140px;
+      height: auto;
+    }
 
-        .club-badge {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            font-size: 20px;
-        }
+    .header-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
 
-        .club-badge img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--brand-black);
+      color: var(--brand-yellow);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
 
-        .user-details h2 {
-            font-size: 16px;
-        }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
 
-        .muted {
-            color: var(--hint);
-            font-size: 12px;
-        }
+    .link-button {
+      background: transparent;
+      border: 2px solid var(--brand-black);
+      color: var(--brand-black);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
+    main {
+      flex: 1;
+      padding: 6px 16px 110px;
+    }
 
-        .stat {
-            background: var(--card);
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
-        }
+    .card {
+      background: var(--brand-card);
+      border-radius: var(--brand-radius);
+      border: 2px solid var(--brand-border);
+      padding: 18px;
+      box-shadow: var(--brand-shadow);
+      margin-bottom: 16px;
+    }
 
-        .stat-value {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--primary);
-        }
+    .card.dark {
+      background: var(--brand-black);
+      color: var(--brand-yellow);
+      border-color: var(--brand-black);
+    }
 
-        .stat-label {
-            font-size: 11px;
-            color: var(--hint);
-            margin-top: 4px;
-        }
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
 
-        .section-title {
-            font-weight: 600;
-            margin: 16px 0 8px;
-        }
+    .card-subtitle {
+      margin: 0;
+      font-size: 13px;
+      color: var(--brand-muted);
+    }
 
-        .tabs {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            margin-bottom: 12px;
-        }
+    .card.dark .card-subtitle {
+      color: rgba(254, 242, 0, 0.8);
+    }
 
-        .tab {
-            border: 1px solid var(--border);
-            background: var(--card);
-            border-radius: 16px;
-            padding: 6px 12px;
-            font-size: 12px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
 
-        .tab.active {
-            background: var(--primary);
-            color: var(--primary-text);
-            border-color: var(--primary);
-        }
+    .grid.two {
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
 
-        .chip {
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 6px 10px;
-            font-size: 12px;
-            cursor: pointer;
-            background: #fff;
-        }
+    .stat {
+      padding: 14px;
+      border-radius: var(--brand-radius-sm);
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: #fffaf0;
+    }
 
-        .chip.active {
-            background: var(--primary);
-            color: var(--primary-text);
-            border-color: var(--primary);
-        }
+    .stat-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--brand-muted);
+    }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-        }
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
 
-        .btn {
-            border: none;
-            background: var(--primary);
-            color: var(--primary-text);
-            padding: 10px 12px;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-        }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      border: 2px solid var(--brand-black);
+      background: var(--brand-black);
+      color: var(--brand-yellow);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      width: 100%;
+    }
 
-        .btn.secondary {
-            background: #fff;
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
+    .button.light {
+      background: var(--brand-yellow);
+      color: var(--brand-black);
+    }
 
-        .list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+    .button.outline {
+      background: transparent;
+      color: var(--brand-black);
+    }
 
-        .list-item {
-            background: var(--card);
-            border-radius: 12px;
-            padding: 12px;
-        }
+    .button.small {
+      width: auto;
+      padding: 8px 14px;
+      font-size: 12px;
+    }
 
-        .list-item.active {
-            border: 1px solid var(--primary);
-            background: #fff;
-        }
+    .list {
+      display: grid;
+      gap: 12px;
+    }
 
-        .list-item .row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-        }
+    .list-item {
+      border-radius: var(--brand-radius-sm);
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      padding: 12px;
+      background: #ffffff;
+    }
 
-        .badge {
-            font-size: 12px;
-            color: var(--hint);
-        }
+    .list-item-title {
+      font-weight: 600;
+      margin: 0 0 6px;
+    }
 
-        .status {
-            font-weight: 700;
-        }
+    .list-item-meta {
+      font-size: 12px;
+      color: var(--brand-muted);
+    }
 
-        .status.win { color: var(--success); }
-        .status.loss { color: var(--danger); }
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
 
-        .filters {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
-        }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 2px solid var(--brand-black);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #fff;
+    }
 
-        .input {
-            border: 1px solid var(--border);
-            padding: 8px 10px;
-            border-radius: 10px;
-            font-size: 12px;
-        }
+    .chip.active {
+      background: var(--brand-black);
+      color: var(--brand-yellow);
+    }
 
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--bg);
-            border-top: 1px solid var(--border);
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 4px;
-            padding: 8px 6px;
-        }
+    label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      color: var(--brand-muted);
+    }
 
-        .nav-btn {
-            background: transparent;
-            border: none;
-            font-size: 11px;
-            color: var(--hint);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-        }
+    input, select, textarea {
+      width: 100%;
+      border: 2px solid var(--brand-black);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-family: var(--brand-font);
+      font-size: 14px;
+      background: #fff;
+      color: var(--brand-black);
+    }
 
-        .nav-btn.active {
-            color: var(--primary);
-            font-weight: 600;
-        }
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
 
-        .loading {
-            padding: 20px;
-            text-align: center;
-            color: var(--hint);
-        }
+    .form-row {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
 
-        .toast {
-            position: fixed;
-            bottom: 90px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #000;
-            color: #fff;
-            padding: 8px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
+    .form-row.two {
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
 
-        .toast.show { opacity: 0.85; }
-    </style>
+    .nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--brand-black);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      padding: 10px 10px 18px;
+      border-top: 2px solid var(--brand-border);
+      z-index: 9;
+    }
+
+    .nav button {
+      background: transparent;
+      border: none;
+      color: rgba(254, 242, 0, 0.7);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .nav button.active {
+      color: var(--brand-yellow);
+    }
+
+    .nav svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    .empty {
+      display: grid;
+      place-items: center;
+      text-align: center;
+      gap: 10px;
+    }
+
+    .empty img {
+      width: min(60vw, 240px);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 96px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--brand-black);
+      color: var(--brand-yellow);
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 20;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    @media (min-width: 720px) {
+      main {
+        padding: 20px 18px 140px;
+      }
+
+      .nav {
+        max-width: 600px;
+        margin: 0 auto;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 16px 16px 0 0;
+      }
+    }
+  </style>
 </head>
 <body>
-<div class="app">
-    <header class="header">
-        <h1>⚽ Dave.sports</h1>
-        <p>Web App Dashboard</p>
-    </header>
-    <main id="view" class="view"></main>
-    <nav class="bottom-nav">
-        <button class="nav-btn" data-route="/">🏠<span>Home</span></button>
-        <button class="nav-btn" data-route="/profile">🧍<span>Profile</span></button>
-        <button class="nav-btn" data-route="/predictions">⚽<span>Predictions</span></button>
-        <button class="nav-btn" data-route="/leaderboards">🏆<span>Leaders</span></button>
-    </nav>
-</div>
-<div id="toast" class="toast"></div>
+  <div id="app">
+    <div class="splash" id="splash">
+      <img class="splash-logo" data-brand-logo alt="Dave.Sport logo" />
+      <div class="splash-subtitle">Predictions Platform</div>
+    </div>
 
-<script>
-    const tg = window.Telegram ? window.Telegram.WebApp : null;
-    const initData = tg ? tg.initData : "";
-    const view = document.getElementById("view");
-    const toast = document.getElementById("toast");
-    const routes = ["/", "/profile", "/predictions", "/leaderboards", "/news"];
-    let authToken = null;
-    let authUser = null;
-    let authPromise = null;
+    <header>
+      <img class="brand-logo" data-brand-logo alt="Dave.Sport" />
+      <div class="header-meta">
+        <div class="pill" id="header-pill">Loading</div>
+        <div class="header-actions">
+          <button class="link-button" id="admin-link" style="display: none;">Admin</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="view"></main>
+
+    <nav class="nav" id="nav">
+      <button data-route="/" class="active">
+        <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-10.5z" /></svg>
+        Home
+      </button>
+      <button data-route="/matches">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16a1 1 0 0 1 1 1v3a5 5 0 0 1-5 5h-1v6h2a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h2v-6H8a5 5 0 0 1-5-5V5a1 1 0 0 1 1-1zm1 2v2a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V6H5z" /></svg>
+        Matches
+      </button>
+      <button data-route="/predictions">
+        <svg viewBox="0 0 24 24"><path d="M7 3h10a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm2 5h6a1 1 0 1 0 0-2H9a1 1 0 1 0 0 2zm0 4h6a1 1 0 1 0 0-2H9a1 1 0 1 0 0 2zm0 4h4a1 1 0 1 0 0-2H9a1 1 0 1 0 0 2z" /></svg>
+        Predictions
+      </button>
+      <button data-route="/leaderboards">
+        <svg viewBox="0 0 24 24"><path d="M5 22a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H5zm7 0a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-3zm7 0a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v17a1 1 0 0 1-1 1h-3z" /></svg>
+        Boards
+      </button>
+      <button data-route="/profile">
+        <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.4 0-8 2.2-8 5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1c0-2.8-3.6-5-8-5z" /></svg>
+        Profile
+      </button>
+    </nav>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const BRAND_LOGO_DATA = "davesport.jpeg";
+    const BUILD_TAG = "2026-02-06-admin-ui-v2";
+
     const state = {
-        leaderboardsTab: "global",
-        leaderboards: { globalPage: 1, predictionsPage: 1 },
-        leaderboardsItems: { global: [], predictions: [] },
-        leaderboardsHasMore: { global: true, predictions: true }
+      route: "/",
+      token: null,
+      user: null,
+      me: null,
+      wallet: null,
+      stats: null,
+      openMatches: [],
+      predictions: [],
+      leaderboardGlobal: null,
+      leaderboardPredictions: null
     };
 
-    if (tg) {
-        tg.ready();
-        tg.expand();
-        const theme = tg.themeParams || {};
-        document.documentElement.style.setProperty("--bg", theme.bg_color || "#ffffff");
-        document.documentElement.style.setProperty("--text", theme.text_color || "#0f0f0f");
-        document.documentElement.style.setProperty("--hint", theme.hint_color || "#8a8a8a");
-        document.documentElement.style.setProperty("--link", theme.link_color || "#2481cc");
-        document.documentElement.style.setProperty("--primary", theme.button_color || "#2481cc");
-        document.documentElement.style.setProperty("--primary-text", theme.button_text_color || "#ffffff");
-        document.documentElement.style.setProperty("--card", theme.secondary_bg_color || "#f3f4f6");
+    const viewEl = document.getElementById("view");
+    const splashEl = document.getElementById("splash");
+    const navEl = document.getElementById("nav");
+    const toastEl = document.getElementById("toast");
+    const headerPillEl = document.getElementById("header-pill");
+    const adminLinkEl = document.getElementById("admin-link");
+
+    function applyBranding() {
+      document.querySelectorAll("[data-brand-logo]").forEach((img) => {
+        img.src = BRAND_LOGO_DATA;
+      });
     }
 
     function showToast(message) {
-        if (tg && tg.showToast) {
-            tg.showToast(message);
-            return;
-        }
-        toast.textContent = message;
-        toast.classList.add("show");
-        setTimeout(() => toast.classList.remove("show"), 1800);
+      toastEl.textContent = message;
+      toastEl.classList.add("show");
+      setTimeout(() => toastEl.classList.remove("show"), 2200);
     }
-    async function ensureAuth() {
-        if (!initData) throw new Error("missing_init_data");
-        if (authToken) return { token: authToken, user: authUser };
-        if (authPromise) return authPromise;
-        authPromise = fetch("/api/auth/telegram", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ initData })
-        })
-            .then(async res => {
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    throw new Error(err.error || "Auth failed");
-                }
-                return res.json();
-            })
-            .then(data => {
-                authToken = data.token;
-                authUser = data.user || null;
-                return data;
-            })
-            .finally(() => {
-                authPromise = null;
-            });
-        return authPromise;
+
+    function setView(html) {
+      viewEl.innerHTML = html;
+      applyBranding();
+    }
+
+    function setActiveNav(path) {
+      navEl.querySelectorAll("button").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.route === path);
+      });
+    }
+
+    function brandEmptyCard(title, message, actionText, actionRoute) {
+      return `
+        <div class="card">
+          <div class="empty">
+            <img data-brand-logo alt="Dave.Sport logo" />
+            <div>
+              <h3 class="card-title">${title}</h3>
+              <p class="card-subtitle">${message}</p>
+            </div>
+            ${actionText ? `<button class="button" data-route="${actionRoute}">${actionText}</button>` : ""}
+          </div>
+        </div>
+      `;
     }
 
     async function apiFetch(path, options = {}) {
-        if (!authToken && path !== "/api/auth/telegram") {
-            await ensureAuth();
+      const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
+      if (state.token) {
+        headers.Authorization = `Bearer ${state.token}`;
+      }
+      const response = await fetch(path, { ...options, headers });
+      if (!response.ok) {
+        let payload = {};
+        try {
+          payload = await response.json();
+        } catch (err) {
+          payload = {};
         }
-        const headers = Object.assign({
-            "Content-Type": "application/json"
-        }, options.headers || {});
-        if (authToken) {
-            headers["Authorization"] = `Bearer ${authToken}`;
+        const errorMessage = payload.error || payload.detail || `Request failed (${response.status})`;
+        throw new Error(errorMessage);
+      }
+      return response.json();
+    }
+
+    async function ensureAuth() {
+      await fetch("/api/health").catch(() => null);
+      const initData = (window.Telegram?.WebApp?.initData || "").trim();
+      if (!initData) {
+        throw new Error("missing_init_data");
+      }
+      const response = await fetch("/api/auth/telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData })
+      });
+      if (!response.ok) {
+        let payload = {};
+        try {
+          payload = await response.json();
+        } catch (err) {
+          payload = {};
         }
-        return fetch(path, Object.assign({}, options, { headers }))
-        return fetch(path, Object.assign({}, options, { headers }))
-            .then(async res => {
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    throw new Error(err.error || "Request failed");
-                }
-                return res.json();
+        const errorMessage = payload.error || payload.detail || "auth_failed";
+        throw new Error(errorMessage);
+      }
+      const data = await response.json();
+      state.token = data.token;
+      state.user = data.user;
+    }
+
+    function renderBlocked(message) {
+      setView(brandEmptyCard("Web App Locked", message, "Try Again", "/"));
+    }
+
+    async function loadDashboardData() {
+      const [me, wallet, stats, openMatches, leaderboardGlobal] = await Promise.all([
+        apiFetch("/api/me"),
+        apiFetch("/api/wallet"),
+        apiFetch("/api/predictions/stats"),
+        apiFetch("/api/predictions/open"),
+        apiFetch("/api/leaderboards/global?page=1&limit=5")
+      ]);
+      state.me = me;
+      state.wallet = wallet;
+      state.stats = stats;
+      state.openMatches = openMatches.items || [];
+      state.leaderboardGlobal = leaderboardGlobal;
+    }
+
+    async function loadPredictions() {
+      const [history, stats] = await Promise.all([
+        apiFetch("/api/predictions/history"),
+        apiFetch("/api/predictions/stats")
+      ]);
+      state.predictions = history.items || [];
+      state.stats = stats;
+    }
+
+    async function loadLeaderboards() {
+      const [global, predictions] = await Promise.all([
+        apiFetch("/api/leaderboards/global?page=1&limit=25"),
+        apiFetch("/api/leaderboards/predictions?page=1&limit=25")
+      ]);
+      state.leaderboardGlobal = global;
+      state.leaderboardPredictions = predictions;
+    }
+
+    async function loadProfile() {
+      state.me = await apiFetch("/api/me");
+    }
+
+    function renderDashboard() {
+      const name = state.me?.username ? `@${state.me.username}` : "Player";
+      const role = (state.me?.role || "user").toUpperCase();
+      const openMatches = state.openMatches || [];
+      const stats = state.stats || { total: 0, wins: 0, losses: 0, win_rate: 0, streak: { type: null, count: 0 } };
+      const leaderboard = state.leaderboardGlobal?.items || [];
+      const streak = stats.streak?.type ? `${stats.streak.type}${stats.streak.count}` : "No streak";
+
+      const matchList = openMatches.length
+        ? openMatches.slice(0, 3).map((match) => `
+            <div class="list-item">
+              <div class="list-item-title">${match.team_a} vs ${match.team_b}</div>
+              <div class="list-item-meta">${match.match_time || "TBD"} | ${match.sport_type || "Football"}</div>
+              <div class="pill-group">
+                <button class="button small" data-route="/matches">Predict Now</button>
+              </div>
+            </div>
+          `).join("")
+        : brandEmptyCard("No open matches", "Check back for the next game.", "View Matches", "/matches");
+
+      const leaderboardItems = leaderboard.length
+        ? leaderboard.map((row) => `
+            <div class="list-item">
+              <div class="list-item-title">#${row.rank} ${row.username}</div>
+              <div class="list-item-meta">${row.coins} coins</div>
+            </div>
+          `).join("")
+        : "<div class=\"list-item\"><div class=\"list-item-title\">No rankings yet</div></div>";
+
+      const adminReady = (state.me?.role || "").toLowerCase() === "admin" || (state.me?.role || "").toLowerCase() === "owner";
+      adminLinkEl.style.display = adminReady ? "inline-flex" : "none";
+
+      setView(`
+        <div class="card dark">
+          <h2 class="card-title">Welcome back, ${name}</h2>
+          <p class="card-subtitle">Role: ${role} | Coins: ${state.wallet?.coins ?? 0}</p>
+          <div class="pill-group">
+            <button class="button light" id="claim-daily">Claim Daily Reward</button>
+            <button class="button outline" data-route="/predictions">View Predictions</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Performance Snapshot</h3>
+          <div class="grid two">
+            <div class="stat">
+              <div class="stat-label">Total Predictions</div>
+              <div class="stat-value">${stats.total || 0}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Win Rate</div>
+              <div class="stat-value">${stats.win_rate || 0}%</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Wins | Losses</div>
+              <div class="stat-value">${stats.wins || 0} | ${stats.losses || 0}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Streak</div>
+              <div class="stat-value">${streak}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Open Matches</h3>
+          <div class="list">
+            ${matchList}
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Top Coins</h3>
+          <div class="list">
+            ${leaderboardItems}
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Dave.Sport News</h3>
+          <p class="card-subtitle">Latest updates will appear here.</p>
+          <button class="button outline" data-route="/news">Open News</button>
+        </div>
+
+        ${adminReady ? `
+          <div class="card">
+            <h3 class="card-title">Admin Tools</h3>
+            <p class="card-subtitle">Moderate users directly from the app.</p>
+            <button class="button" data-route="/admin">Open Admin</button>
+          </div>
+        ` : ""}
+      `);
+
+      const claimBtn = document.getElementById("claim-daily");
+      if (claimBtn) {
+        claimBtn.addEventListener("click", async () => {
+          try {
+            const data = await apiFetch("/api/rewards/daily", { method: "POST" });
+            if (data.claimed) {
+              showToast(`Claimed ${data.coins_added || 0} coins`);
+              state.wallet = await apiFetch("/api/wallet");
+              headerPillEl.textContent = `${state.wallet.coins} coins`;
+              renderDashboard();
+            } else {
+              showToast(`Come back in ${data.retry_in?.hours || 0}h ${data.retry_in?.minutes || 0}m`);
+            }
+          } catch (err) {
+            showToast(err.message || "Unable to claim");
+          }
+        });
+      }
+    }
+
+    function renderMatches() {
+      const openMatches = state.openMatches || [];
+      if (!openMatches.length) {
+        setView(brandEmptyCard("No matches available", "New fixtures drop soon.", "Back Home", "/"));
+        return;
+      }
+
+      const matchCards = openMatches.map((match) => `
+        <div class="card">
+          <h3 class="card-title">${match.team_a} vs ${match.team_b}</h3>
+          <p class="card-subtitle">${match.match_time || "TBD"} | ${match.sport_type || "Football"}</p>
+          <div class="pill-group">
+            <button class="chip" data-choice="A" data-match="${match.match_id}">${match.team_a}</button>
+            <button class="chip" data-choice="DRAW" data-match="${match.match_id}">Draw</button>
+            <button class="chip" data-choice="B" data-match="${match.match_id}">${match.team_b}</button>
+          </div>
+          <div class="form-row two" style="margin-top:12px;">
+            <input type="number" inputmode="numeric" min="0" placeholder="${match.team_a} score" data-score-a="${match.match_id}" />
+            <input type="number" inputmode="numeric" min="0" placeholder="${match.team_b} score" data-score-b="${match.match_id}" />
+          </div>
+          <button class="button" data-place="${match.match_id}">Place Prediction</button>
+        </div>
+      `).join("");
+
+      setView(matchCards);
+
+      const choiceMap = new Map();
+      viewEl.querySelectorAll(".chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const matchId = chip.dataset.match;
+          const choice = chip.dataset.choice;
+          choiceMap.set(matchId, choice);
+          viewEl.querySelectorAll(`.chip[data-match='${matchId}']`).forEach((el) => el.classList.remove("active"));
+          chip.classList.add("active");
+        });
+      });
+
+      viewEl.querySelectorAll("button[data-place]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const matchId = btn.dataset.place;
+          const choice = choiceMap.get(matchId);
+          if (!choice) {
+            showToast("Select a winner");
+            return;
+          }
+          const scoreAEl = viewEl.querySelector(`input[data-score-a='${matchId}']`);
+          const scoreBEl = viewEl.querySelector(`input[data-score-b='${matchId}']`);
+          const scoreA = scoreAEl?.value ? Number(scoreAEl.value) : null;
+          const scoreB = scoreBEl?.value ? Number(scoreBEl.value) : null;
+          try {
+            await apiFetch("/api/predictions/place", {
+              method: "POST",
+              body: JSON.stringify({ match_id: Number(matchId), choice, score_a: scoreA, score_b: scoreB })
             });
-    }
-
-
-    function getRouteFromPath() {
-        const path = window.location.pathname.replace(/\/+$/, "") || "/";
-        for (const r of routes.slice(1)) {
-            if (path.endsWith(r)) return r;
-        }
-        return "/";
-    }
-
-    function getBasePath() {
-        const path = window.location.pathname.replace(/\/+$/, "") || "/";
-        for (const r of routes.slice(1)) {
-            if (path.endsWith(r)) {
-                return path.slice(0, -r.length) || "";
-            }
-        }
-        return path === "/" ? "" : path;
-    }
-
-    const basePath = getBasePath();
-
-    function buildPath(route) {
-        if (route === "/") {
-            return basePath || "/";
-        }
-        return (basePath + route) || route;
-    }
-
-    function navigate(route) {
-        window.history.pushState({}, "", buildPath(route));
-        render();
-    }
-
-    function setActiveNav(route) {
-        document.querySelectorAll(".nav-btn").forEach(btn => {
-            btn.classList.toggle("active", btn.dataset.route === route);
+            showToast("Prediction submitted");
+            await loadPredictions();
+            await loadDashboardData();
+            renderMatches();
+          } catch (err) {
+            showToast(err.message || "Unable to submit");
+          }
         });
+      });
     }
 
-    document.querySelectorAll(".nav-btn").forEach(btn => {
-        btn.addEventListener("click", () => navigate(btn.dataset.route));
-    });
-    window.addEventListener("popstate", render);
-
-    function renderBlocked() {
-        view.innerHTML = `
-            <div class="card">
-                <div class="section-title">Open in Telegram</div>
-                <p class="muted">This Web App must be opened from the Telegram bot.</p>
-            </div>
-        `;
+    function renderPredictionList() {
+      if (!state.predictions.length) {
+        return brandEmptyCard("No predictions yet", "Your picks will show here.", "Make a Pick", "/matches");
+      }
+      return state.predictions.map((item) => `
+        <div class="list-item">
+          <div class="list-item-title">${item.match}</div>
+          <div class="list-item-meta">Prediction: ${item.prediction} | Result: ${item.result}</div>
+          <div class="list-item-meta">Status: ${item.status} | ${item.match_time || ""}</div>
+        </div>
+      `).join("");
     }
 
-    async function renderDashboard() {
-        view.innerHTML = `<div class="loading">Loading dashboard...</div>`;
-        const [me, stats] = await Promise.all([
-            apiFetch("/api/me"),
-            apiFetch("/api/predictions/stats")
-        ]);
-        const club = me.club;
-        const streak = stats.streak || { type: null, count: 0 };
-        const streakText = streak.count ? `${streak.type}${streak.count}` : "-";
-        const username = me.username || (authUser && authUser.username) || "User";
-        const total = stats.total || 0;
-        const winRate = stats.win_rate || 0;
-        const wins = stats.wins || 0;
-        view.innerHTML = `
-            <div class="card user-card">
-                <div class="club-badge">${club && club.badge ? `<img src="${club.badge}" alt="club">` : (club ? club.label.split(" ")[0] : "👤")}</div>
-                <div class="user-details">
-                    <h2>${username}</h2>
-                    <div class="muted">${club ? club.label : "No club selected"} · ${me.coins} coins</div>
-                </div>
+    function renderPredictions() {
+      const stats = state.stats || { total: 0, win_rate: 0, wins: 0, losses: 0 };
+      setView(`
+        <div class="card">
+          <h3 class="card-title">Prediction Stats</h3>
+          <div class="grid two">
+            <div class="stat">
+              <div class="stat-label">Total</div>
+              <div class="stat-value">${stats.total || 0}</div>
             </div>
-            <div class="stats-grid">
-                <div class="stat">
-                    <div class="stat-value">${total}</div>
-                    <div class="stat-label">Total Predictions</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">${winRate}%</div>
-                    <div class="stat-label">Win %</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">${streakText}</div>
-                    <div class="stat-label">Current Streak</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">${wins}</div>
-                    <div class="stat-label">Wins</div>
-                </div>
+            <div class="stat">
+              <div class="stat-label">Win Rate</div>
+              <div class="stat-value">${stats.win_rate || 0}%</div>
             </div>
-        `;
+            <div class="stat">
+              <div class="stat-label">Wins</div>
+              <div class="stat-value">${stats.wins || 0}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Losses</div>
+              <div class="stat-value">${stats.losses || 0}</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">History</h3>
+          <div class="list">
+            ${renderPredictionList()}
+          </div>
+        </div>
+      `);
     }
 
-    async function renderProfile() {
-        view.innerHTML = `<div class="loading">Loading profile...</div>`;
-        const data = await apiFetch("/api/me");
-        const clubs = data.clubs || [];
-        const selectedClub = data.club ? data.club.key : "";
-        const selectedInterests = data.interests || [];
-        const interestOptions = data.interests_options || [];
-        view.innerHTML = `
-            <div class="section-title">Club Selection</div>
-            <div class="grid" id="club-grid">
-                ${clubs.map(c => `
-                    <button class="chip ${c.key === selectedClub ? "active" : ""}" data-club="${c.key}">
-                        ${c.label}
-                    </button>
-                `).join("")}
-            </div>
-            <div class="section-title" style="margin-top:16px;" id="interests">Interests</div>
-            <div class="filters" id="interest-list">
-                ${interestOptions.map(i => `
-                    <button class="chip ${selectedInterests.includes(i) ? "active" : ""}" data-interest="${i}">
-                        ${i}
-                    </button>
-                `).join("")}
-            </div>
-            <div class="card">
-                <div class="section-title">Referrals</div>
-                <div class="muted">Invites: ${data.referrals.invite_count} · Coins earned: ${data.referrals.coins_earned}</div>
-            </div>
-        `;
-        document.getElementById("club-grid").onclick = async (e) => {
-            const btn = e.target.closest("[data-club]");
-            if (!btn) return;
-            const club = btn.dataset.club;
-            await apiFetch("/api/me", { method: "PATCH", body: JSON.stringify({ club }) });
-            showToast("Club updated");
-            renderProfile();
-        };
-        document.getElementById("interest-list").onclick = async (e) => {
-            const btn = e.target.closest("[data-interest]");
-            if (!btn) return;
-            const interest = btn.dataset.interest;
-            const next = selectedInterests.includes(interest)
-                ? selectedInterests.filter(i => i !== interest)
-                : selectedInterests.concat([interest]);
-            await apiFetch("/api/me", { method: "PATCH", body: JSON.stringify({ interests: next }) });
-            showToast("Interests updated");
-            renderProfile();
-        };
-        if (window.location.hash === "#interests") {
-            const anchor = document.getElementById("interests");
-            if (anchor) {
-                anchor.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
-        }
+    function renderLeaderboardList(items, emptyTitle) {
+      if (!items || !items.length) {
+        return brandEmptyCard(emptyTitle, "Leaderboard updates will appear here.", "Back Home", "/");
+      }
+      return items.map((row) => `
+        <div class="list-item">
+          <div class="list-item-title">#${row.rank} ${row.username}</div>
+          <div class="list-item-meta">${row.coins != null ? `${row.coins} coins` : `${row.win_rate}% win rate`}</div>
+        </div>
+      `).join("");
     }
 
-    function renderPredictionList(items, showCoins) {
-        if (!items.length) {
-            return `<div class="card muted">No predictions found.</div>`;
-        }
-        return `<div class="list">
-            ${items.map(p => `
-                <div class="list-item">
-                    <div class="row">
-                        <div><strong>${p.match}</strong></div>
-                        <div class="badge">${p.match_time || "TBD"}</div>
-                    </div>
-                    <div class="muted">Pick: ${p.prediction}</div>
-                    <div class="row" style="margin-top:6px;">
-                        <div class="badge">Result: ${p.result}</div>
-                        ${showCoins ? `<div class="badge">Coins: ${p.coins_earned}</div>` : ""}
-                    </div>
-                </div>
-            `).join("")}
-        </div>`;
+    function renderLeaderboards() {
+      const globalItems = state.leaderboardGlobal?.items || [];
+      const predItems = (state.leaderboardPredictions?.items || []).map((row) => ({
+        rank: row.rank,
+        username: row.username,
+        win_rate: row.win_rate
+      }));
+
+      setView(`
+        <div class="card">
+          <h3 class="card-title">Global Coins</h3>
+          <div class="list">
+            ${renderLeaderboardList(globalItems, "No leaderboard data")}
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Prediction Accuracy</h3>
+          <div class="list">
+            ${renderLeaderboardList(predItems, "No accuracy data")}
+          </div>
+        </div>
+      `);
     }
 
-    async function renderPredictions() {
-        view.innerHTML = `<div class="loading">Loading predictions...</div>`;
-        const [stats, history] = await Promise.all([
-            apiFetch("/api/predictions/stats"),
-            apiFetch("/api/predictions/history")
-        ]);
-        const streak = stats.streak || { type: null, count: 0 };
-        const streakText = streak.count ? `${streak.type}${streak.count}` : "-";
-        const total = stats.total || 0;
-        const winRate = stats.win_rate || 0;
-        const wins = stats.wins || 0;
-        view.innerHTML = `
-            <div class="stats-grid">
-                <div class="stat">
-                    <div class="stat-value">${total}</div>
-                    <div class="stat-label">Total Predictions</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">${winRate}%</div>
-                    <div class="stat-label">Win %</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">${streakText}</div>
-                    <div class="stat-label">Current Streak</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">${wins}</div>
-                    <div class="stat-label">Wins</div>
-                </div>
+    function renderProfile() {
+      const me = state.me || {};
+      const clubs = me.clubs || [];
+      const interests = me.interests_options || [];
+      const selectedInterests = new Set(me.interests || []);
+      const clubOptions = clubs.map((club) => `<option value="${club.key}" ${me.club?.key === club.key ? "selected" : ""}>${club.label}</option>`).join("");
+      const interestOptions = interests.map((interest) => `
+        <button class="chip ${selectedInterests.has(interest) ? "active" : ""}" data-interest="${interest}">${interest}</button>
+      `).join("");
+      const referral = me.referrals || { invite_count: 0, coins_earned: 0 };
+
+      setView(`
+        <div class="card">
+          <h3 class="card-title">Profile Settings</h3>
+          <div class="form-row">
+            <label>Favorite Club</label>
+            <select id="club-select">
+              <option value="">None</option>
+              ${clubOptions}
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Sports Interests</label>
+            <div class="pill-group" id="interest-group">
+              ${interestOptions}
             </div>
-            <div class="section-title">History</div>
-            ${renderPredictionList(history.items || [], true)}
-        `;
-    }
+          </div>
+          <button class="button" id="save-profile">Save Preferences</button>
+        </div>
 
-    function renderLeaderboardList(items, currentRank) {
-        if (!items.length) return `<div class="card muted">No leaderboard data yet.</div>`;
-        return `<div class="list">
-            ${items.map(item => `
-                <div class="list-item ${item.rank === currentRank ? "active" : ""}">
-                    <div class="row">
-                        <div><strong>#${item.rank}</strong> ${item.username}</div>
-                        <div class="badge">${item.coins !== undefined ? `${item.coins} coins` : `${item.win_rate}%`}</div>
-                    </div>
-                    ${item.total ? `<div class="muted">${item.wins}/${item.total} correct</div>` : ""}
-                </div>
-            `).join("")}
-        </div>`;
-    }
+        <div class="card">
+          <h3 class="card-title">Invites</h3>
+          <p class="card-subtitle">Invite friends and earn bonuses.</p>
+          <div class="list-item">
+            <div class="list-item-title">Invites: ${referral.invite_count}</div>
+            <div class="list-item-meta">Coins earned: ${referral.coins_earned}</div>
+          </div>
+          <button class="button outline" id="copy-referral">Copy referral link</button>
+        </div>
+      `);
 
-    async function renderLeaderboards() {
-        view.innerHTML = `<div class="loading">Loading leaderboards...</div>`;
-        const tab = state.leaderboardsTab;
-        const page = tab === "global" ? state.leaderboards.globalPage : state.leaderboards.predictionsPage;
-        const data = await apiFetch(`/api/leaderboards/${tab}?page=${page}&limit=10`);
-        if (page === 1) {
-            state.leaderboardsItems[tab] = data.items || [];
+      const interestGroup = document.getElementById("interest-group");
+      interestGroup?.addEventListener("click", (event) => {
+        const target = event.target.closest(".chip");
+        if (!target) return;
+        const interest = target.dataset.interest;
+        if (selectedInterests.has(interest)) {
+          selectedInterests.delete(interest);
+          target.classList.remove("active");
         } else {
-            state.leaderboardsItems[tab] = state.leaderboardsItems[tab].concat(data.items || []);
+          selectedInterests.add(interest);
+          target.classList.add("active");
         }
-        state.leaderboardsHasMore[tab] = (data.items || []).length === 10;
-        const items = state.leaderboardsItems[tab];
-        view.innerHTML = `
-            <div class="tabs">
-                <button class="tab ${tab === "global" ? "active" : ""}" data-tab="global">Global</button>
-                <button class="tab ${tab === "predictions" ? "active" : ""}" data-tab="predictions">Predictions</button>
-            </div>
-            ${renderLeaderboardList(items || [], data.current_user_rank)}
-            ${state.leaderboardsHasMore[tab] ? `<div style="margin-top:10px;"><button class="btn secondary" id="lb-more">Load More</button></div>` : ""}
-        `;
-        document.querySelectorAll(".tab").forEach(btn => {
-            btn.onclick = () => {
-                state.leaderboardsTab = btn.dataset.tab;
-                state.leaderboards[btn.dataset.tab + "Page"] = 1;
-                renderLeaderboards();
-            };
-        });
-        const moreBtn = document.getElementById("lb-more");
-        if (moreBtn) {
-            moreBtn.onclick = () => {
-                if (tab === "global") state.leaderboards.globalPage += 1;
-                else state.leaderboards.predictionsPage += 1;
-                renderLeaderboards();
-            };
+      });
+
+      document.getElementById("save-profile")?.addEventListener("click", async () => {
+        const clubSelect = document.getElementById("club-select");
+        const payload = {
+          club: clubSelect?.value || "",
+          interests: Array.from(selectedInterests)
+        };
+        try {
+          state.me = await apiFetch("/api/me", { method: "PATCH", body: JSON.stringify(payload) });
+          showToast("Profile updated");
+          renderProfile();
+        } catch (err) {
+          showToast(err.message || "Unable to update");
         }
+      });
+
+      document.getElementById("copy-referral")?.addEventListener("click", async () => {
+        const referralLink = `https://t.me/davesportsbot?start=${state.me?.id || ""}`;
+        try {
+          await navigator.clipboard.writeText(referralLink);
+          showToast("Referral link copied");
+        } catch (err) {
+          showToast("Copy failed");
+        }
+      });
     }
 
     function renderNewsDisabled() {
-        view.innerHTML = `
-            <div class="card">
-                <div class="section-title">News is on Telegram</div>
-                <p class="muted">Articles are delivered only in Telegram topics. Use the bot topics to read the latest posts.</p>
-                <button class="btn secondary" id="news-home">Back to Home</button>
-            </div>
-        `;
-        const btn = document.getElementById("news-home");
-        if (btn) {
-            btn.onclick = () => navigate("/");
-        }
+      setView(brandEmptyCard("News coming soon", "Dave.Sport updates will land here.", "Back Home", "/"));
     }
 
-    async function render() {
-        const route = getRouteFromPath();
-        setActiveNav(route);
-        if (!initData) {
-            renderBlocked();
+    function renderAdmin() {
+      const isAdmin = (state.me?.role || "").toLowerCase() === "admin" || (state.me?.role || "").toLowerCase() === "owner";
+      if (!isAdmin) {
+        setView(brandEmptyCard("Admins only", "You do not have access to admin tools.", "Back Home", "/"));
+        return;
+      }
+
+      setView(`
+        <div class="card dark">
+          <h2 class="card-title">Admin Control Center</h2>
+          <p class="card-subtitle">Full access to matches, users, and broadcasts.</p>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Match Control</h3>
+          <div class="form-row two">
+            <input type="text" id="admin-team-a" placeholder="Team A" />
+            <input type="text" id="admin-team-b" placeholder="Team B" />
+          </div>
+          <div class="form-row two">
+            <input type="text" id="admin-match-time" placeholder="Match time (optional)" />
+            <input type="text" id="admin-sport-type" placeholder="Sport type (football)" />
+          </div>
+          <div class="form-row">
+            <input type="number" id="admin-chat-id" placeholder="Target chat ID (optional)" />
+          </div>
+          <button class="button" id="admin-create-match">Create Match</button>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Active Matches</h3>
+          <div class="pill-group">
+            <button class="button small outline" id="admin-filter-open">Show Open Only</button>
+          </div>
+          <div class="list" id="admin-match-list"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">User Management</h3>
+          <div class="form-row two">
+            <input type="text" id="admin-lookup-username" placeholder="Username (@user)" />
+            <input type="number" id="admin-lookup-id" placeholder="User ID" />
+          </div>
+          <button class="button" id="admin-lookup-user">Find User</button>
+          <div class="list" id="admin-user-details"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Economy & Roles</h3>
+          <div class="form-row two">
+            <input type="number" id="admin-balance-amount" placeholder="Adjust coins (+/-)" />
+            <button class="button small" id="admin-balance-apply">Apply Coins</button>
+          </div>
+          <div class="form-row two">
+            <select id="admin-role-select">
+              <option value="ADMIN">ADMIN</option>
+              <option value="MEMBER">MEMBER</option>
+            </select>
+            <button class="button small" id="admin-role-apply">Set Role</button>
+          </div>
+          <button class="button outline" id="admin-reset-warnings">Reset Warnings</button>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Moderation</h3>
+          <div class="form-row">
+            <label>Target User ID</label>
+            <input type="number" id="admin-user-id" placeholder="Telegram user ID" />
+          </div>
+          <div class="form-row">
+            <label>Reason</label>
+            <textarea id="admin-reason" placeholder="Optional reason"></textarea>
+          </div>
+          <div class="pill-group">
+            <button class="button small" data-admin-action="warn">Warn</button>
+            <button class="button small" data-admin-action="mute">Mute</button>
+            <button class="button small" data-admin-action="ban">Ban</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Broadcast / Post Article</h3>
+          <div class="form-row">
+            <textarea id="admin-broadcast-message" placeholder="Write a broadcast message or article link"></textarea>
+          </div>
+          <button class="button" id="admin-broadcast-send">Send Broadcast</button>
+        </div>
+      `);
+
+      let selectedUser = null;
+      let showOpenOnly = false;
+
+      const matchListEl = document.getElementById("admin-match-list");
+      const userDetailsEl = document.getElementById("admin-user-details");
+
+      function renderUserDetails(user) {
+        if (!user) {
+          userDetailsEl.innerHTML = "<div class=\"list-item\">No user loaded.</div>";
+          return;
+        }
+        const role = (user.role || "MEMBER").toUpperCase();
+        const club = user.club || "None";
+        const interests = user.interests ? user.interests : "";
+        userDetailsEl.innerHTML = `
+          <div class="list-item">
+            <div class="list-item-title">@${user.username || "unknown"} (ID ${user.user_id})</div>
+            <div class="list-item-meta">Role: ${role} | Coins: ${user.coin_balance ?? 0}</div>
+            <div class="list-item-meta">Club: ${club} | Interests: ${interests || "None"}</div>
+          </div>
+        `;
+        const roleSelect = document.getElementById("admin-role-select");
+        if (roleSelect) {
+          roleSelect.value = role === "ADMIN" ? "ADMIN" : "MEMBER";
+        }
+      }
+
+      async function loadMatches() {
+        matchListEl.innerHTML = "<div class=\"list-item\">Loading matches...</div>";
+        try {
+          const data = await apiFetch("/admin/matches/active");
+          let items = data.items || [];
+          if (showOpenOnly) {
+            items = items.filter((match) => match.status === "OPEN");
+          }
+          if (!items.length) {
+            matchListEl.innerHTML = "<div class=\"list-item\">No active matches.</div>";
             return;
+          }
+          matchListEl.innerHTML = items.map((match) => `
+            <div class="list-item">
+              <div class="list-item-title">${match.team_a} vs ${match.team_b}</div>
+              <div class="list-item-meta">ID ${match.match_id} | Status ${match.status} | Picks ${match.prediction_count ?? 0} | ${match.match_time || "TBD"} | ${match.sport_type || "football"}</div>
+              <div class="pill-group">
+                <button class="button small outline" data-match-action="predictions" data-match-id="${match.match_id}" data-team-a="${match.team_a}" data-team-b="${match.team_b}">View Picks</button>
+                ${match.status === "OPEN" ? `<button class="button small outline" data-match-action="close" data-match-id="${match.match_id}">Close</button>` : ""}
+                <button class="button small outline" data-match-action="resolve-a" data-match-id="${match.match_id}">${match.team_a}</button>
+                <button class="button small outline" data-match-action="resolve-draw" data-match-id="${match.match_id}">Draw</button>
+                <button class="button small outline" data-match-action="resolve-b" data-match-id="${match.match_id}">${match.team_b}</button>
+              </div>
+              <div class="list" id="admin-picks-${match.match_id}" style="margin-top:10px;"></div>
+              <div class="form-row two" style="margin-top:10px;">
+                <input type="text" placeholder="Set new time" data-match-time="${match.match_id}" />
+                <button class="button small" data-match-action="time" data-match-id="${match.match_id}">Update Time</button>
+              </div>
+              <button class="button small outline" data-match-action="delete" data-match-id="${match.match_id}">Delete Match</button>
+            </div>
+          `).join("");
+        } catch (err) {
+          matchListEl.innerHTML = `<div class="list-item">Failed to load matches: ${err.message || "error"}</div>`;
+        }
+      }
+
+      async function resolveMatch(matchId, winnerCode) {
+        const score = prompt("Enter score (e.g. 2-1) or leave empty:", "");
+        let scoreA = null;
+        let scoreB = null;
+        if (score && score.includes("-")) {
+          const parts = score.split("-");
+          scoreA = Number(parts[0]);
+          scoreB = Number(parts[1]);
+        }
+        await apiFetch(`/admin/matches/${matchId}/resolve`, {
+          method: "POST",
+          body: JSON.stringify({ winner_code: winnerCode, score_a: scoreA, score_b: scoreB, reward: 10 })
+        });
+      }
+
+      document.getElementById("admin-create-match")?.addEventListener("click", async () => {
+        const teamA = document.getElementById("admin-team-a").value.trim();
+        const teamB = document.getElementById("admin-team-b").value.trim();
+        const matchTime = document.getElementById("admin-match-time").value.trim();
+        const sportType = document.getElementById("admin-sport-type").value.trim() || "football";
+        const chatIdValue = document.getElementById("admin-chat-id").value.trim();
+        if (!teamA || !teamB) {
+          showToast("Team A and Team B are required");
+          return;
         }
         try {
-            await ensureAuth();
-            if (route === "/") await renderDashboard();
-            else if (route === "/profile") await renderProfile();
-            else if (route === "/predictions") await renderPredictions();
-            else if (route === "/leaderboards") await renderLeaderboards();
-            else if (route === "/news") {
-                renderNewsDisabled();
-            }
-            else await renderDashboard();
+          await apiFetch("/admin/matches", {
+            method: "POST",
+            body: JSON.stringify({
+              team_a: teamA,
+              team_b: teamB,
+              match_time: matchTime || null,
+              sport_type: sportType,
+              chat_id: chatIdValue ? Number(chatIdValue) : null
+            })
+          });
+          showToast("Match created");
+          await loadMatches();
         } catch (err) {
-            view.innerHTML = `<div class="card muted">Failed to load. Try again.</div>`;
+          showToast(err.message || "Create failed");
         }
+      });
+
+      document.getElementById("admin-filter-open")?.addEventListener("click", async (event) => {
+        showOpenOnly = !showOpenOnly;
+        const btn = event.target;
+        btn.textContent = showOpenOnly ? "Show All Matches" : "Show Open Only";
+        await loadMatches();
+      });
+
+      matchListEl.addEventListener("click", async (event) => {
+        const btn = event.target.closest("[data-match-action]");
+        if (!btn) return;
+        const matchId = btn.dataset.matchId;
+        const action = btn.dataset.matchAction;
+        if (!matchId) return;
+        try {
+          if (action === "predictions") {
+            const teamA = btn.dataset.teamA || "Team A";
+            const teamB = btn.dataset.teamB || "Team B";
+            const listEl = document.getElementById(`admin-picks-${matchId}`);
+            if (!listEl) return;
+            if (listEl.dataset.loaded === "true") {
+              listEl.dataset.loaded = "false";
+              listEl.innerHTML = "";
+              return;
+            }
+            listEl.dataset.loaded = "true";
+            listEl.innerHTML = "<div class=\"list-item\">Loading picks...</div>";
+            const data = await apiFetch(`/admin/matches/${matchId}/predictions`);
+            const items = data.items || [];
+            if (!items.length) {
+              listEl.innerHTML = "<div class=\"list-item\">No predictions yet.</div>";
+              return;
+            }
+            listEl.innerHTML = items.map((row) => {
+              let pred = row.prediction || "DRAW";
+              if (pred === "A") pred = teamA;
+              if (pred === "B") pred = teamB;
+              if (pred === "SCORE" && row.pred_score_a != null && row.pred_score_b != null) {
+                pred = `${row.pred_score_a}-${row.pred_score_b}`;
+              }
+              const name = row.username ? `@${row.username}` : `User ${row.user_id}`;
+              return `
+                <div class="list-item">
+                  <div class="list-item-title">${name}</div>
+                  <div class="list-item-meta">Prediction: ${pred} | Status: ${row.status || "PENDING"}</div>
+                </div>
+              `;
+            }).join("");
+            return;
+          }
+          if (action === "close") {
+            await apiFetch(`/admin/matches/${matchId}/close`, { method: "POST", body: JSON.stringify({}) });
+            showToast("Match closed");
+          } else if (action === "resolve-a") {
+            await resolveMatch(matchId, "A");
+            showToast("Match resolved");
+          } else if (action === "resolve-b") {
+            await resolveMatch(matchId, "B");
+            showToast("Match resolved");
+          } else if (action === "resolve-draw") {
+            await resolveMatch(matchId, "DRAW");
+            showToast("Match resolved");
+          } else if (action === "time") {
+            const timeInput = document.querySelector(`input[data-match-time='${matchId}']`);
+            const newTime = timeInput?.value?.trim();
+            if (!newTime) {
+              showToast("Enter a new time");
+              return;
+            }
+            await apiFetch(`/admin/matches/${matchId}/time`, {
+              method: "POST",
+              body: JSON.stringify({ match_time: newTime })
+            });
+            showToast("Time updated");
+          } else if (action === "delete") {
+            await apiFetch(`/admin/matches/${matchId}`, { method: "DELETE" });
+            showToast("Match deleted");
+          }
+          await loadMatches();
+        } catch (err) {
+          showToast(err.message || "Action failed");
+        }
+      });
+
+      document.getElementById("admin-lookup-user")?.addEventListener("click", async () => {
+        const username = document.getElementById("admin-lookup-username").value.trim();
+        const userIdValue = document.getElementById("admin-lookup-id").value.trim();
+        try {
+          let data = null;
+          if (username) {
+            data = await apiFetch(`/admin/users/by-username?username=${encodeURIComponent(username)}`);
+          } else if (userIdValue) {
+            data = await apiFetch(`/admin/users/${Number(userIdValue)}`);
+          } else {
+            showToast("Enter username or ID");
+            return;
+          }
+          selectedUser = data;
+          renderUserDetails(selectedUser);
+        } catch (err) {
+          showToast(err.message || "User not found");
+        }
+      });
+
+      document.getElementById("admin-balance-apply")?.addEventListener("click", async () => {
+        if (!selectedUser) {
+          showToast("Load a user first");
+          return;
+        }
+        const amount = Number(document.getElementById("admin-balance-amount").value || 0);
+        if (!amount) {
+          showToast("Enter amount");
+          return;
+        }
+        try {
+          await apiFetch(`/admin/users/${selectedUser.user_id}/balance`, {
+            method: "POST",
+            body: JSON.stringify({ amount })
+          });
+          showToast("Balance updated");
+          selectedUser = await apiFetch(`/admin/users/${selectedUser.user_id}`);
+          renderUserDetails(selectedUser);
+        } catch (err) {
+          showToast(err.message || "Balance update failed");
+        }
+      });
+
+      document.getElementById("admin-role-apply")?.addEventListener("click", async () => {
+        if (!selectedUser) {
+          showToast("Load a user first");
+          return;
+        }
+        const roleValue = document.getElementById("admin-role-select").value;
+        try {
+          await apiFetch(`/admin/users/${selectedUser.user_id}/role`, {
+            method: "POST",
+            body: JSON.stringify({ role: roleValue })
+          });
+          showToast("Role updated");
+          selectedUser = await apiFetch(`/admin/users/${selectedUser.user_id}`);
+          renderUserDetails(selectedUser);
+        } catch (err) {
+          showToast(err.message || "Role update failed");
+        }
+      });
+
+      document.getElementById("admin-reset-warnings")?.addEventListener("click", async () => {
+        if (!selectedUser) {
+          showToast("Load a user first");
+          return;
+        }
+        try {
+          await apiFetch(`/admin/users/${selectedUser.user_id}/warnings/reset`, { method: "POST" });
+          showToast("Warnings reset");
+        } catch (err) {
+          showToast(err.message || "Reset failed");
+        }
+      });
+
+      viewEl.querySelectorAll("[data-admin-action]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const userId = Number(document.getElementById("admin-user-id").value || 0);
+          const reason = document.getElementById("admin-reason").value || "";
+          if (!userId) {
+            showToast("Enter a user ID");
+            return;
+          }
+          const action = btn.dataset.adminAction;
+          try {
+            await apiFetch(`/api/moderation/${action}`, {
+              method: "POST",
+              body: JSON.stringify({ actor_id: state.me?.id || 0, target_id: userId, reason })
+            });
+            showToast(`Action: ${action}`);
+          } catch (err) {
+            showToast(err.message || "Action failed");
+          }
+        });
+      });
+
+      document.getElementById("admin-broadcast-send")?.addEventListener("click", async () => {
+        const message = document.getElementById("admin-broadcast-message").value.trim();
+        if (!message) {
+          showToast("Write a message first");
+          return;
+        }
+        try {
+          await apiFetch("/admin/broadcast", {
+            method: "POST",
+            body: JSON.stringify({ message })
+          });
+          showToast("Broadcast sent");
+          document.getElementById("admin-broadcast-message").value = "";
+        } catch (err) {
+          showToast(err.message || "Broadcast failed");
+        }
+      });
+
+      renderUserDetails(null);
+      loadMatches();
     }
 
-    render();
-</script>
+    async function render(path) {
+      state.route = path;
+      setActiveNav(path);
+      headerPillEl.textContent = state.wallet ? `${state.wallet.coins} coins` : "Loading";
+
+      switch (path) {
+        case "/":
+          await loadDashboardData();
+          renderDashboard();
+          break;
+        case "/matches":
+          state.openMatches = (await apiFetch("/api/predictions/open")).items || [];
+          renderMatches();
+          break;
+        case "/predictions":
+          await loadPredictions();
+          renderPredictions();
+          break;
+        case "/leaderboards":
+          await loadLeaderboards();
+          renderLeaderboards();
+          break;
+        case "/profile":
+          await loadProfile();
+          renderProfile();
+          break;
+        case "/news":
+          renderNewsDisabled();
+          break;
+        case "/admin":
+          if (!state.me) {
+            await loadProfile();
+          }
+          renderAdmin();
+          break;
+        default:
+          renderNewsDisabled();
+          break;
+      }
+    }
+
+    function bindNav() {
+      document.body.addEventListener("click", (event) => {
+        const routeButton = event.target.closest("[data-route]");
+        if (!routeButton) return;
+        const route = routeButton.dataset.route;
+        if (!route) return;
+        render(route).catch((err) => {
+          setView(brandEmptyCard("Unable to load", err.message || "Something went wrong.", "Try again", "/"));
+        });
+      });
+
+      adminLinkEl.addEventListener("click", () => {
+        render("/admin");
+      });
+    }
+
+    async function boot() {
+      applyBranding();
+      console.log(`Dave.Sport build: ${BUILD_TAG}`);
+      if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+      }
+
+      bindNav();
+
+      try {
+        await ensureAuth();
+        await loadDashboardData();
+        headerPillEl.textContent = `${state.wallet?.coins ?? 0} coins`;
+        await render("/");
+      } catch (err) {
+        renderBlocked(`Please open the app from Telegram. (${err.message || "auth failed"})`);
+      } finally {
+        splashEl.classList.add("hidden");
+      }
+    }
+
+    boot();
+  </script>
 </body>
 </html>
