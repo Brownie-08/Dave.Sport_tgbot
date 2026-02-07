@@ -5,87 +5,87 @@ EPL_TEAMS = [
     "Nottm Forest", "Southampton", "Spurs", "West Ham", "Wolves"
 ]
 
-# Club Data with emojis + optional badge URLs
+# Club Data with optional badge URLs
 CLUBS_DATA = {
     "Arsenal": {
-        "name": "🔴⚪ Arsenal",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t3.png"
+        "name": "Arsenal",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t3.png"
     },
     "Aston Villa": {
-        "name": "🦁 Aston Villa",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t7.png"
+        "name": "Aston Villa",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t7.png"
     },
     "Bournemouth": {
-        "name": "🍒 Bournemouth",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t91.png"
+        "name": "Bournemouth",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t91.png"
     },
     "Brentford": {
-        "name": "🐝 Brentford",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t94.png"
+        "name": "Brentford",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t94.png"
     },
     "Brighton": {
-        "name": "🔵⚪ Brighton",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t36.png"
+        "name": "Brighton",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t36.png"
     },
     "Chelsea": {
-        "name": "🔵 Chelsea",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t8.png"
+        "name": "Chelsea",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t8.png"
     },
     "Crystal Palace": {
-        "name": "🦅 Palace",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t31.png"
+        "name": "Crystal Palace",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t31.png"
     },
     "Everton": {
-        "name": "🍬 Everton",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t11.png"
+        "name": "Everton",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t11.png"
     },
     "Fulham": {
-        "name": "⬜⬛ Fulham",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t54.png"
+        "name": "Fulham",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t54.png"
     },
     "Ipswich": {
-        "name": "⚽ Ipswich",
-        "badge": None
+        "name": "Ipswich",
+        "badge": "https://upload.wikimedia.org/wikipedia/en/thumb/4/43/Ipswich_Town.svg/200px-Ipswich_Town.svg.png"
     },
     "Leicester": {
-        "name": "🦊 Leicester",
-        "badge": None
+        "name": "Leicester",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t13.png"
     },
     "Liverpool": {
-        "name": "🔴 Liverpool",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t14.png"
+        "name": "Liverpool",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t14.png"
     },
     "Man City": {
-        "name": "🔵 Man City",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t43.png"
+        "name": "Man City",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t43.png"
     },
     "Man Utd": {
-        "name": "👹 Man Utd",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t1.png"
+        "name": "Man Utd",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t1.png"
     },
     "Newcastle": {
-        "name": "⚫⚪ Newcastle",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t4.png"
+        "name": "Newcastle",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t4.png"
     },
     "Nottm Forest": {
-        "name": "🌳 Forest",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t17.png"
+        "name": "Nottm Forest",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t17.png"
     },
     "Southampton": {
-        "name": "🔴⚪ Southampton",
-        "badge": None
+        "name": "Southampton",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t20.png"
     },
     "Spurs": {
-        "name": "🐓 Spurs",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t6.png"
+        "name": "Spurs",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t6.png"
     },
     "West Ham": {
-        "name": "⚒️ West Ham",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t21.png"
+        "name": "West Ham",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t21.png"
     },
     "Wolves": {
-        "name": "🐺 Wolves",
-        "badge": "https://resources.premierleague.com/premierleague/badges/rb/t39.png"
+        "name": "Wolves",
+        "badge": "https://resources.premierleague.com/premierleague/badges/70/t39.png"
     }
 }
 
