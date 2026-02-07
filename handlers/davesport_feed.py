@@ -546,12 +546,36 @@ WP_CATEGORY_ID_TO_ROUTE = {
 
 # WordPress category name to routing category mapping (for admin input normalization)
 WP_CATEGORY_TO_ROUTE = {
+    # General football
+    "football": "football_news",
     "football news": "football_news",
+    "match report": "football_news",
+    "match reports": "football_news",
+    "match preview": "football_news",
+    "match previews": "football_news",
+
+    # Transfer / EPL / WSL / Live
     "transfer news": "transfer_news",
+    "transfers": "transfer_news",
+
     "epl news": "epl_news",
+    "premier league": "epl_news",
+    "premier league news": "epl_news",
+    "premier league match reports": "epl_news",
+    "premier league match previews": "epl_news",
+
     "wsl news": "wsl_news",
+    "women's football": "wsl_news",
+    "women football": "wsl_news",
+    "wsl press conferences": "wsl_news",
+    "wsl match reports": "wsl_news",
+    "wsl match previews": "wsl_news",
+    "wsl interviews": "wsl_news",
+
     "live scores": "live_scores",
     "live score updates": "live_scores",
+    "live news": "live_scores",
+
     "f1 news": "f1_news",
     "boxing news": "boxing_news",
     "golf news": "golf_news",
