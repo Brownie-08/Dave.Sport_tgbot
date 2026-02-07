@@ -620,9 +620,10 @@ def admin_create_match(payload: MatchCreatePayload, _: None = Depends(require_bo
     try:
         match_time = payload.match_time or "TBD"
         sport_type = payload.sport_type or "football"
-        message = f"New match announced: {payload.team_a} vs {payload.team_b} ({sport_type}). Kickoff: {match_time}. Open Dave.Sport to predict."
-        if config.WEBAPP_URL:
-            message = f"{message}\n{config.WEBAPP_URL}"
+        message = (
+            f"New match announced: {payload.team_a} vs {payload.team_b} ({sport_type}). "
+            f"Kickoff: {match_time}. Open the Dave.Sport bot and tap Menu → Web App to place your prediction."
+        )
         _broadcast_general(message)
     except Exception:
         pass

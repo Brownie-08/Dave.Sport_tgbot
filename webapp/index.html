@@ -255,6 +255,21 @@
       margin-top: 10px;
     }
 
+    .user-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      background: #fff;
+    }
+
     .chip {
       display: inline-flex;
       align-items: center;
@@ -440,7 +455,7 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     const BRAND_LOGO_DATA = "davesport.jpeg";
-    const BUILD_TAG = "2026-02-06-admin-ui-v2";
+    const BUILD_TAG = "2026-02-06-admin-ui-v4";
 
     const state = {
       route: "/",
@@ -469,7 +484,11 @@
     }
 
     function showToast(message) {
-      toastEl.textContent = message;
+      let text = message;
+      if (text && typeof text === "object") {
+        text = text.message || JSON.stringify(text);
+      }
+      toastEl.textContent = text || "Done";
       toastEl.classList.add("show");
       setTimeout(() => toastEl.classList.remove("show"), 2200);
     }
@@ -609,7 +628,12 @@
       const leaderboardItems = leaderboard.length
         ? leaderboard.map((row) => `
             <div class="list-item">
-              <div class="list-item-title">#${row.rank} ${row.username}</div>
+              <div class="list-item-title">
+                <span class="user-row">
+                  ${row.club_badge ? `<img class="badge-icon" src="${row.club_badge}" alt="${row.club_label || "Club"}" />` : ""}
+                  <span>#${row.rank} ${row.username}</span>
+                </span>
+              </div>
               <div class="list-item-meta">${row.coins} coins</div>
             </div>
           `).join("")
@@ -816,7 +840,12 @@
       }
       return items.map((row) => `
         <div class="list-item">
-          <div class="list-item-title">#${row.rank} ${row.username}</div>
+          <div class="list-item-title">
+            <span class="user-row">
+              ${row.club_badge ? `<img class="badge-icon" src="${row.club_badge}" alt="${row.club_label || "Club"}" />` : ""}
+              <span>#${row.rank} ${row.username}</span>
+            </span>
+          </div>
           <div class="list-item-meta">${row.coins != null ? `${row.coins} coins` : `${row.win_rate}% win rate`}</div>
         </div>
       `).join("");
@@ -827,7 +856,9 @@
       const predItems = (state.leaderboardPredictions?.items || []).map((row) => ({
         rank: row.rank,
         username: row.username,
-        win_rate: row.win_rate
+        win_rate: row.win_rate,
+        club_badge: row.club_badge,
+        club_label: row.club_label
       }));
 
       setView(`
@@ -856,6 +887,16 @@
         <button class="chip ${selectedInterests.has(interest) ? "active" : ""}" data-interest="${interest}">${interest}</button>
       `).join("");
       const referral = me.referrals || { invite_count: 0, coins_earned: 0 };
+      const clubPreview = me.club
+        ? `
+          <div class="pill-group">
+            <div class="chip active">
+              ${me.club.badge ? `<img class="badge-icon" src="${me.club.badge}" alt="${me.club.label}" />` : ""}
+              <span>${me.club.label}</span>
+            </div>
+          </div>
+        `
+        : `<p class="card-subtitle">No club selected yet.</p>`;
 
       setView(`
         <div class="card">
@@ -867,6 +908,7 @@
               ${clubOptions}
             </select>
           </div>
+          ${clubPreview}
           <div class="form-row">
             <label>Sports Interests</label>
             <div class="pill-group" id="interest-group">
@@ -975,6 +1017,7 @@
             <input type="number" id="admin-lookup-id" placeholder="User ID" />
           </div>
           <button class="button" id="admin-lookup-user">Find User</button>
+          <button class="button outline" id="admin-ensure-user">Ensure/Create User</button>
           <div class="list" id="admin-user-details"></div>
         </div>
 
@@ -1168,7 +1211,12 @@
               const name = row.username ? `@${row.username}` : `User ${row.user_id}`;
               return `
                 <div class="list-item">
-                  <div class="list-item-title">${name}</div>
+                  <div class="list-item-title">
+                    <span class="user-row">
+                      ${row.club_badge ? `<img class="badge-icon" src="${row.club_badge}" alt="${row.club_label || "Club"}" />` : ""}
+                      <span>${name}</span>
+                    </span>
+                  </div>
                   <div class="list-item-meta">Prediction: ${pred} | Status: ${row.status || "PENDING"}</div>
                 </div>
               `;
@@ -1225,7 +1273,31 @@
           selectedUser = data;
           renderUserDetails(selectedUser);
         } catch (err) {
-          showToast(err.message || "User not found");
+          showToast(err.message || "User not found. Ask them to /start the bot.");
+        }
+      });
+
+      document.getElementById("admin-ensure-user")?.addEventListener("click", async () => {
+        const usernameRaw = document.getElementById("admin-lookup-username").value.trim();
+        const userIdValue = document.getElementById("admin-lookup-id").value.trim();
+        if (!userIdValue) {
+          showToast("Enter user ID to create");
+          return;
+        }
+        const cleanUsername = usernameRaw ? usernameRaw.replace(/^@/, "") : null;
+        try {
+          await apiFetch("/admin/users/ensure", {
+            method: "POST",
+            body: JSON.stringify({
+              user_id: Number(userIdValue),
+              username: cleanUsername || null
+            })
+          });
+          selectedUser = await apiFetch(`/admin/users/${Number(userIdValue)}`);
+          renderUserDetails(selectedUser);
+          showToast("User ensured");
+        } catch (err) {
+          showToast(err.message || "Ensure failed");
         }
       });
 

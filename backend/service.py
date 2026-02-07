@@ -7,6 +7,23 @@ import config
 from shared_constants import CLUBS_DATA, INTERESTS
 
 
+def resolve_club_entry(club_value: Optional[str]) -> Optional[Dict[str, Any]]:
+    if not club_value:
+        return None
+    if club_value in CLUBS_DATA:
+        data = CLUBS_DATA[club_value]
+        if isinstance(data, dict):
+            return {"key": club_value, "label": data.get("name", club_value), "badge": data.get("badge")}
+        return {"key": club_value, "label": str(data), "badge": None}
+    for key, data in CLUBS_DATA.items():
+        if not isinstance(data, dict):
+            continue
+        name = data.get("name", "")
+        if name == club_value or key.lower() in str(club_value).lower() or str(club_value) in name:
+            return {"key": key, "label": name or key, "badge": data.get("badge")}
+    return None
+
+
 def ensure_user(user_id: int, username: Optional[str] = None, invited_by: Optional[int] = None) -> bool:
     """Insert user if new. Returns True if created."""
     with get_conn() as conn:
@@ -116,15 +133,7 @@ def build_me_response(user_id: int) -> Dict[str, Any]:
         return {"id": user_id, "username": None, "role": role, "club": None, "interests": [], "coins": 0}
 
     club_value = user.get("club")
-    club_entry = None
-    if club_value:
-        if club_value in CLUBS_DATA:
-            club_entry = {"key": club_value, "label": CLUBS_DATA[club_value]["name"], "badge": CLUBS_DATA[club_value].get("badge")}
-        else:
-            for key, data in CLUBS_DATA.items():
-                if data.get("name") == club_value or key.lower() in club_value.lower():
-                    club_entry = {"key": key, "label": data.get("name", key), "badge": data.get("badge")}
-                    break
+    club_entry = resolve_club_entry(club_value)
 
     interests_raw = user.get("interests") or ""
     interests = [i for i in interests_raw.split(",") if i]
@@ -418,7 +427,7 @@ def get_leaderboard_global(page: int, limit: int, user_id: Optional[int] = None)
             cur.execute("SELECT COUNT(*) AS total FROM users")
             total_users = int((cur.fetchone() or {}).get("total") or 0)
             cur.execute(
-                "SELECT user_id, username, coin_balance FROM users ORDER BY coin_balance DESC, user_id ASC LIMIT %s OFFSET %s",
+                "SELECT user_id, username, coin_balance, club FROM users ORDER BY coin_balance DESC, user_id ASC LIMIT %s OFFSET %s",
                 (limit, offset),
             )
             rows = cur.fetchall() or []
@@ -432,8 +441,16 @@ def get_leaderboard_global(page: int, limit: int, user_id: Optional[int] = None)
                 current_rank = higher + 1 if total_users else None
     items = []
     for idx, r in enumerate(rows):
+        club_entry = resolve_club_entry(r.get("club"))
         items.append(
-            {"rank": offset + idx + 1, "user_id": r["user_id"], "username": r.get("username") or "Unknown", "coins": int(r.get("coin_balance") or 0)}
+            {
+                "rank": offset + idx + 1,
+                "user_id": r["user_id"],
+                "username": r.get("username") or "Unknown",
+                "coins": int(r.get("coin_balance") or 0),
+                "club_label": (club_entry or {}).get("label"),
+                "club_badge": (club_entry or {}).get("badge"),
+            }
         )
     return {"items": items, "total_users": total_users, "current_user_rank": current_rank}
 
@@ -444,7 +461,7 @@ def get_leaderboard_predictions(page: int, limit: int, user_id: Optional[int] = 
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT u.user_id, u.username,
+                SELECT u.user_id, u.username, u.club,
                        SUM(CASE WHEN p.status = 'WON' THEN 1 ELSE 0 END) as wins,
                        SUM(CASE WHEN p.status IN ('WON','LOST') THEN 1 ELSE 0 END) as total
                 FROM predictions p JOIN users u ON p.user_id = u.user_id
@@ -496,8 +513,18 @@ def get_leaderboard_predictions(page: int, limit: int, user_id: Optional[int] = 
         wins = int(r.get("wins") or 0)
         total = int(r.get("total") or 0)
         win_rate = round((wins / total * 100), 1) if total else 0
+        club_entry = resolve_club_entry(r.get("club"))
         items.append(
-            {"rank": offset + idx + 1, "user_id": r["user_id"], "username": r.get("username") or "Unknown", "wins": wins, "total": total, "win_rate": win_rate}
+            {
+                "rank": offset + idx + 1,
+                "user_id": r["user_id"],
+                "username": r.get("username") or "Unknown",
+                "wins": wins,
+                "total": total,
+                "win_rate": win_rate,
+                "club_label": (club_entry or {}).get("label"),
+                "club_badge": (club_entry or {}).get("badge"),
+            }
         )
     return {"items": items, "current_user_rank": current_rank}
 
@@ -787,6 +814,7 @@ def get_match_predictions(match_id: int) -> List[Dict[str, Any]]:
                 """
                 SELECT p.user_id,
                        u.username,
+                       u.club,
                        p.prediction,
                        p.pred_score_a,
                        p.pred_score_b,
@@ -801,6 +829,7 @@ def get_match_predictions(match_id: int) -> List[Dict[str, Any]]:
             rows = cur.fetchall() or []
     items: List[Dict[str, Any]] = []
     for r in rows:
+        club_entry = resolve_club_entry(r.get("club"))
         items.append(
             {
                 "user_id": int(r.get("user_id")),
@@ -809,6 +838,8 @@ def get_match_predictions(match_id: int) -> List[Dict[str, Any]]:
                 "pred_score_a": r.get("pred_score_a"),
                 "pred_score_b": r.get("pred_score_b"),
                 "status": r.get("status"),
+                "club_label": (club_entry or {}).get("label"),
+                "club_badge": (club_entry or {}).get("badge"),
             }
         )
     return items

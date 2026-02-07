@@ -7,6 +7,23 @@ import config
 from shared_constants import CLUBS_DATA, INTERESTS
 
 
+def resolve_club_entry(club_value: Optional[str]) -> Optional[Dict[str, Any]]:
+    if not club_value:
+        return None
+    if club_value in CLUBS_DATA:
+        data = CLUBS_DATA[club_value]
+        if isinstance(data, dict):
+            return {"key": club_value, "label": data.get("name", club_value), "badge": data.get("badge")}
+        return {"key": club_value, "label": str(data), "badge": None}
+    for key, data in CLUBS_DATA.items():
+        if not isinstance(data, dict):
+            continue
+        name = data.get("name", "")
+        if name == club_value or key.lower() in str(club_value).lower() or str(club_value) in name:
+            return {"key": key, "label": name or key, "badge": data.get("badge")}
+    return None
+
+
 def _row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
     return {k: row[k] for k in row.keys()}
 
@@ -280,7 +297,7 @@ def get_leaderboard_global(page: int, limit: int, user_id: Optional[int] = None)
     cursor = conn.cursor()
     cursor.execute('SELECT COUNT(*) FROM users')
     total_users = cursor.fetchone()[0] or 0
-    cursor.execute('SELECT user_id, username, coin_balance FROM users ORDER BY coin_balance DESC, user_id ASC LIMIT ? OFFSET ?', (limit, offset))
+    cursor.execute('SELECT user_id, username, coin_balance, club FROM users ORDER BY coin_balance DESC, user_id ASC LIMIT ? OFFSET ?', (limit, offset))
     rows = cursor.fetchall()
     current_rank = None
     if user_id:
@@ -293,11 +310,14 @@ def get_leaderboard_global(page: int, limit: int, user_id: Optional[int] = None)
     conn.close()
     items = []
     for idx, r in enumerate(rows):
+        club_entry = resolve_club_entry(r[3] if len(r) > 3 else None)
         items.append({
             "rank": offset + idx + 1,
             "user_id": r[0],
             "username": r[1] or "Unknown",
-            "coins": r[2] or 0
+            "coins": r[2] or 0,
+            "club_label": (club_entry or {}).get("label"),
+            "club_badge": (club_entry or {}).get("badge")
         })
     return {"items": items, "total_users": total_users, "current_user_rank": current_rank}
 
@@ -307,7 +327,7 @@ def get_leaderboard_predictions(page: int, limit: int, user_id: Optional[int] = 
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT u.user_id, u.username,
+        SELECT u.user_id, u.username, u.club,
                SUM(CASE WHEN p.status = 'WON' THEN 1 ELSE 0 END) as wins,
                SUM(CASE WHEN p.status IN ('WON','LOST') THEN 1 ELSE 0 END) as total
         FROM predictions p JOIN users u ON p.user_id = u.user_id
@@ -344,16 +364,19 @@ def get_leaderboard_predictions(page: int, limit: int, user_id: Optional[int] = 
     conn.close()
     items = []
     for idx, r in enumerate(rows):
-        wins = r[2] or 0
-        total = r[3] or 0
+        wins = r[3] or 0
+        total = r[4] or 0
         win_rate = round((wins / total * 100), 1) if total else 0
+        club_entry = resolve_club_entry(r[2] if len(r) > 2 else None)
         items.append({
             "rank": offset + idx + 1,
             "user_id": r[0],
             "username": r[1] or "Unknown",
             "wins": wins,
             "total": total,
-            "win_rate": win_rate
+            "win_rate": win_rate,
+            "club_label": (club_entry or {}).get("label"),
+            "club_badge": (club_entry or {}).get("badge")
         })
     return {"items": items, "current_user_rank": current_rank}
 
